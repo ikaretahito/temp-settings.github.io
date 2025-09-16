@@ -33,7 +33,10 @@
   .progress{inline-size:100%;block-size:10px;background:#eee;border-radius:999px;overflow:hidden}
 .progress > span{display:block;block-size:100%;inline-size:0;background:#0b66ff}
 .note{color:#666;font-size:12px}
-
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg-btn{padding:6px 12px;background:#fff;border:0;cursor:pointer}
+.seg-btn.active{background:#e8f3ff}
+.seg-btn:focus{outline:2px solid #9cc7ff;outline-offset:1px}
 </style>
 </head>
 <body>
@@ -295,7 +298,47 @@
 
   <section data-page="display" hidden><h2>画面</h2><div class="panel">輝度・壁紙・ダークモード</div></section>
   <section data-page="notifications" hidden><h2>通知</h2><div class="panel">通知の管理</div></section>
-  <section data-page="storage" hidden><h2>ストレージ</h2><div class="panel">円グラフ（省略）/ 詳細</div></section>
+  <section data-page="storage" hidden>
+  <h2>ストレージ</h2>
+
+  <!-- 単位切替 -->
+  <div class="row" role="tablist" aria-label="表示単位">
+    <div class="seg">
+      <button class="seg-btn active" data-unit="gb" aria-pressed="true">GB</button>
+      <button class="seg-btn" data-unit="pct" aria-pressed="false">%</button>
+    </div>
+    <div class="help">単位なしは GB。必要なら % に切り替え。</div>
+  </div>
+
+  <!-- グラフ本体（画像差し替え） -->
+  <div class="panel" style="text-align:center">
+    <!-- ※ ファイル名は手元の画像に合わせてください -->
+    <img id="storageChart"
+         src="storage usageGB.png"
+         alt="ストレージ円グラフ（GB）"
+         style="max-width:720px;width:100%">
+  </div>
+
+  <!-- 詳細（GBと%の両方を記載） -->
+  <div class="panel">
+    <details>
+      <summary style="cursor:pointer"><strong>詳細</strong>（カテゴリ別の容量と割合）</summary>
+      <ul style="margin:12px 0 0 18px;line-height:1.9">
+        <li>アプリ … <strong>30.00</strong> GB（23.4%）</li>
+        <li>画像 … <strong>14.00</strong> GB（10.9%）</li>
+        <li>動画 … <strong>4.90</strong> GB（3.8%）</li>
+        <li>音楽 … <strong>3.20</strong> GB（2.5%）</li>
+        <li>ゲーム … <strong>0.65</strong> GB（0.5%）</li>
+        <li>その他 … <strong>0.08</strong> GB（0.1%）</li>
+        <li>OS … <strong>10.00</strong> GB（7.8%）</li>
+        <li>キャッシュ … <strong>11.00</strong> GB（8.6%）</li>
+        <li>空き容量 … <strong>54.20</strong> GB（42.3%）</li>
+      </ul>
+      <div class="help" style="margin-top:8px">合計: 128.03 GB</div>
+    </details>
+  </div>
+</section>
+
   <section data-page="system" hidden><h2>システム</h2><div class="panel">言語 / OSアップデート / 時刻</div></section>
   <section data-page="about" hidden><h2>端末情報</h2><div class="panel">デバイス名 / IMEI / ビルド番号</div></section>
 </main>

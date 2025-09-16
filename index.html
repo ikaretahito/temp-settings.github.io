@@ -48,6 +48,16 @@
     <li data-page="about">端末情報</li>
   </ul>
 </nav>
+  <script>
+  function show(name){
+    document.querySelectorAll('section[data-page]')
+      .forEach(s => {
+        // クリックしたページ以外は非表示にする
+        s.hidden = (s.dataset.page !== name);
+      });
+  }
+</script>
+
 
 <main id="content">
   <!-- インターネット -->

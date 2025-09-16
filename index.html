@@ -70,13 +70,18 @@
   </section>
 
   <!-- バッテリー（タスク用に重要要素を配置） -->
-  <section data-page="battery" hidden>
-    <h2>バッテリー</h2>
+ <section data-page="battery" hidden>
+  <h2>バッテリー</h2>
+
+  <!-- 縦積みラッパー -->
+  <div class="battery-stack">
     <div class="row">
       <div>
         <div>バッテリーの状態</div>
         <div class="help">最大容量: <strong id="maxcap">95%</strong></div>
       </div>
+    </div>
+
     <div class="row">
       <div>
         <div>省電力モード</div>
@@ -84,15 +89,14 @@
       </div>
       <div class="toggle" data-bind="saver"></div>
     </div>
+
     <div class="panel">
-      電池使用量（過去24時間）<div class="panel">
-  <h3>バッテリー使用量（過去24時間）</h3>
-  <img src="battery usageもどき.png" alt="バッテリーグラフ" style="width:100%;max-width:500px;">
-</div>
-
+      電池使用量（過去24時間）
+      <h3>バッテリー使用量（過去24時間）</h3>
+      <img src="battery usageもどき.png" alt="バッテリーグラフ" style="width:100%;max-width:700px;">
     </div>
-  </section>
-
+  </div>
+</section>
   <!-- 位置情報権限（アプリ） -->
   <section data-page="apps" hidden>
     <h2>アプリ</h2>

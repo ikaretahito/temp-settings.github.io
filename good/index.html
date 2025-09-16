@@ -300,32 +300,5 @@
   <section data-page="about" hidden><h2>端末情報</h2><div class="panel">デバイス名 / IMEI / ビルド番号</div></section>
 </main>
 <script src="script.js"></script>
-<script>
-  // ページ切替
-  const content = document.getElementById('content');
-  const pages = [...content.querySelectorAll('section[data-page]')];
-  document.getElementById('menu').addEventListener('click', e=>{
-    const li = e.target.closest('li'); if(!li) return;
-    document.querySelectorAll('li').forEach(x=>x.classList.toggle('active', x===li));
-    const name = li.dataset.page;
-    pages.forEach(p=>p.hidden = p.dataset.page!==name);
-  });
-
-  // トグル動作
-  document.querySelectorAll('.toggle').forEach(t=>{
-    t.addEventListener('click', ()=> t.classList.toggle('on'));
-  });
-
-  // 位置情報権限トグル
-  function toggleLocation(){
-    const el = document.getElementById('locState');
-    el.textContent = (el.textContent==='許可') ? '不許可' : '許可';
-  }
-
-  // 簡易計測（達成時間などをコンソールに）
-  const start = performance.now();
-  window.markDone = label => console.log(label, Math.round(performance.now()-start)+'ms 経過');
-  // 例: タスク完了時に markDone('バッテリー最大容量を確認できた');
-</script>
 </body>
 </html>

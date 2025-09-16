@@ -30,6 +30,10 @@
   flex-direction: column;
   gap: 12px;
 }
+  .progress{inline-size:100%;block-size:10px;background:#eee;border-radius:999px;overflow:hidden}
+.progress > span{display:block;block-size:100%;inline-size:0;background:#0b66ff}
+.note{color:#666;font-size:12px}
+
 </style>
 </head>
 <body>
@@ -201,14 +205,101 @@
     <div class="toggle off" data-bind="nfc_unlock"></div>
   </div>
 </section>
-  <section data-page="mobile" hidden><h2>モバイル通信</h2><div class="panel">通信量・APN・テザリング</div></section>
+  
+  <!-- モバイル通信 -->
+<section data-page="mobile" hidden>
+  <h2>モバイル通信</h2>
+
+  <!-- 今月の通信量サマリ -->
+  <div class="panel">
+    <strong>今月の通信量</strong>（締め日: 毎月1日）
+    <div class="help">残り 8.2 GB / 20 GB</div>
+    <div class="progress" aria-label="今月の通信量の使用率">
+      <span id="dataUsedBar" style="width:59%"></span>
+    </div>
+    <div class="note" style="margin-top:6px">使用: 11.8 GB / 上限: 20 GB</div>
+  </div>
+
+  <!-- 通信量を制限 -->
+  <div class="row">
+    <div>
+      <div>通信量を制限</div>
+      <div class="help">上限を超えるとモバイルデータを自動で停止します</div>
+    </div>
+    <div class="toggle off" data-bind="cap"></div>
+  </div>
+  <div class="panel" id="capPanel" hidden>
+    <label>上限（GB）:
+      <input id="capInput" type="number" min="1" max="200" step="1" value="20" style="inline-size:80px">
+    </label>
+    <button class="badge" onclick="applyCap()">適用</button>
+    <div class="note">現在の上限: <span id="capNow">20</span> GB</div>
+  </div>
+
+  <!-- アクセスポイント（APN） -->
+  <div class="row" onclick="show('apn')" style="cursor:pointer">
+    <div>
+      <div>アクセスポイント変更（APN） ▸</div>
+      <div class="help">キャリアのAPNを選択・編集</div>
+    </div>
+  </div>
+
+  <!-- テザリング（参考） -->
+  <div class="row">
+    <div>
+      <div>テザリング</div>
+      <div class="help">Wi-Fi/USB/Bluetoothでインターネット共有</div>
+    </div>
+    <div class="toggle off" data-bind="tether"></div>
+  </div>
+
+  <!-- 通知パネルに今月の通信量を表示 -->
+  <div class="row">
+    <div>
+      <div>通知パネルに今月の通信量を表示</div>
+      <div class="help">クイック設定に今月の使用量を常に表示します</div>
+    </div>
+    <div class="toggle on" data-bind="notifyData"></div>
+  </div>
+</section>
+
+<!-- APN 詳細ページ（兄弟要素として別セクションに） -->
+<section data-page="apn" hidden>
+  <h2>アクセスポイント（APN）</h2>
+
+  <div class="row" onclick="show('mobile')" style="cursor:pointer;margin-bottom:6px">
+    <div>← モバイル通信に戻る</div>
+  </div>
+
+  <div class="panel">
+    <strong>現在のAPN:</strong> <span id="apnCurrent">carrier.example.jp</span>
+    <div class="help">認証: CHAP / MMSC: mms.example.jp</div>
+  </div>
+
+  <div class="panel">
+    <strong>利用可能なAPN</strong>
+    <ul style="margin:8px 0 0 18px">
+      <li><button class="badge" onclick="setAPN('carrier.example.jp')">carrier.example.jp</button></li>
+      <li><button class="badge" onclick="setAPN('mvno.fast.net')">mvno.fast.net</button></li>
+      <li><button class="badge" onclick="setAPN('test.apn')">test.apn</button></li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <strong>カスタムAPNを追加</strong><br>
+    名称 <input id="apnName" style="inline-size:160px">
+    APN <input id="apnValue" style="inline-size:220px">
+    <button class="badge" onclick="addAPN()">追加</button>
+  </div>
+</section>
+
   <section data-page="display" hidden><h2>画面</h2><div class="panel">輝度・壁紙・ダークモード</div></section>
   <section data-page="notifications" hidden><h2>通知</h2><div class="panel">通知の管理</div></section>
   <section data-page="storage" hidden><h2>ストレージ</h2><div class="panel">円グラフ（省略）/ 詳細</div></section>
   <section data-page="system" hidden><h2>システム</h2><div class="panel">言語 / OSアップデート / 時刻</div></section>
   <section data-page="about" hidden><h2>端末情報</h2><div class="panel">デバイス名 / IMEI / ビルド番号</div></section>
 </main>
-
+<script src="script.js"></script>
 <script>
   // ページ切替
   const content = document.getElementById('content');

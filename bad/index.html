@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>設定モック（ゴミUI）</title>
+<style>
+  :root{--line:#d9d9d9}
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;display:flex;height:100vh}
+  nav{width:260px;background:#fff;padding:8px;border-right:1px solid var(--line)}
+  li{list-style:none;padding:10px;border-bottom:1px dashed var(--line);cursor:pointer}
+  main{flex:1;padding:16px}
+  .row{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);padding:10px;margin:10px 0}
+  .toggle{inline-size:50px;block-size:26px;border:1px solid #666;position:relative}
+  .toggle::after{content:"✕";position:absolute;inset:2px;inline-size:22px;block-size:22px;background:#eee;display:grid;place-items:center;font-size:12px}
+  .panel{border:1px dashed var(--line);padding:12px;margin-top:10px}
+  .pill{background:#eee;padding:3px 8px;border-radius:999px}
+</style>
+</head>
+<body>
+<nav>
+  <ul id="menu">
+    <li data-page="air">機内モード</li>
+    <li data-page="net" class="active">インターネット</li>
+    <li data-page="etc">その他無線</li>
+    <li data-page="apps">アプリ</li>
+    <li data-page="theme">スクリーンタイム・個人用設定</li>
+    <li data-page="storage">ストレージ</li>
+    <li data-page="system">システム</li>
+    <li data-page="about">端末情報</li>
+    <li data-page="notify">通知</li>
+  </ul>
+</nav>
+
+<main id="content">
+  <!-- ネットワーク（分散・混乱仕様） -->
+  <section data-page="net">
+    <h2>インターネット</h2>
+    <div class="row">
+      <div>Wi-Fi（詳細は別アプリで設定）<div class="pill">推奨</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="panel">
+      接続・接続解除 / 過去SSID / <span style="text-decoration:underline;cursor:pointer" onclick="popup()">DNS 詳細</span>
+      <br/>自動接続の有無（別ウィンドウ）
+    </div>
+  </section>
+
+  <!-- バッテリーは深くに隠す -->
+  <section data-page="about" hidden>
+    <h2>端末情報</h2>
+    <div class="panel">
+      デバイス名 / IMEI / ビルド番号 … <span style="text-decoration:underline;cursor:pointer" onclick="gotoHidden()">内部稼働率</span>
+    </div>
+  </section>
+
+  <section data-page="hidden" hidden>
+    <h2>内部稼働率</h2>
+    <div class="panel">
+      稼働スコア: 0.87<br/>
+      <span style="text-decoration:underline;cursor:pointer" onclick="gotoDeeper()">電源情報</span>
+    </div>
+  </section>
+
+  <section data-page="power" hidden>
+    <h2>電源情報</h2>
+    <div class="row">
+      <div>バッテリーの状態（最大容量）</div>
+      <div class="pill" onclick="alert('表示は別画面で確認してください');">▶</div>
+    </div>
+  </section>
+
+  <!-- 位置情報権限はアプリのさらに下層 -->
+  <section data-page="apps" hidden>
+    <h2>アプリ</h2>
+    <div class="panel">
+      すべてのアプリを表示（システムを含む） → 地図アプリ → 権限 → 位置情報（<span id="loc">許可</span>)
+      <div style="margin-top:8px"><button onclick="document.getElementById('loc').textContent = (document.getElementById('loc').textContent==='許可'?'不許可':'許可')">どこかを押すと変わる</button></div>
+    </div>
+  </section>
+
+  <!-- ダミー -->
+  <section data-page="air" hidden><h2>機内モード</h2><div class="panel">ここでオフにしてもWi-Fiはたまにオンのままです（仕様）</div></section>
+  <section data-page="etc" hidden><h2>その他無線</h2><div class="panel">NFC / Nearby Share / テザリング（位置はここ）</div></section>
+  <section data-page="theme" hidden><h2>スクリーンタイム・個人用設定</h2><div class="panel">輝度 / 壁紙 / ダークモード / スクリーンタイム</div></section>
+  <section data-page="storage" hidden><h2>ストレージ</h2><div class="panel">パーセンテージのみ表示 79%</div></section>
+  <section data-page="system" hidden><h2>システム</h2><div class="panel">言語 / OSアップデート / 時刻</div></section>
+  <section data-page="notify" hidden><h2>通知</h2><div class="panel">通知パネルに今月の通信量を表示（設定はここ）</div></section>
+</main>
+
+<script>
+  // メニュー遷移
+  const pages = [...document.querySelectorAll('main section')];
+  document.getElementById('menu').addEventListener('click', e=>{
+    const li = e.target.closest('li'); if(!li) return;
+    const name = li.dataset.page;
+    pages.forEach(p=>p.hidden = p.dataset.page!==name);
+  });
+
+  // ポップアップで別設定アプリを“開く”
+  function popup(){
+    window.open('popup.html','_blank','width=420,height=520');
+  }
+
+  // 深い迷路
+  function gotoHidden(){ show('hidden'); }
+  function gotoDeeper(){ show('power'); }
+  function show(name){ pages.forEach(p=>p.hidden = p.dataset.page!==name); }
+
+  // 計測（差が出やすいよう同じAPI名）
+  const start = performance.now();
+  window.markDone = label => console.log('[BAD]', label, Math.round(performance.now()-start)+'ms');
+</script>
+</body>
+</html>

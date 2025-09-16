@@ -130,10 +130,21 @@
     </div>
     <div class="toggle on" data-bind="bt"></div>
   </div>
+<!-- 接続デバイス内のどこか（Bluetoothの下など）に追加 -->
+<div class="row" onclick="show('nfc')" style="cursor:pointer">
+  <div>
+    <div>NFC ▸</div>
+    <div class="help">タッチで支払い・読み取り / NFCロック解錠に利用可</div>
+  </div>
+</div>
 
   <!-- NFC -->
-  <section data-page="nfc" hidden>
+ <section data-page="nfc" hidden>
   <h2>NFC</h2>
+
+  <div class="row" onclick="show('devices')" style="cursor:pointer;margin-bottom:6px">
+    <div>← 接続デバイスに戻る</div>
+  </div>
 
   <div class="row">
     <div>
@@ -146,11 +157,12 @@
   <div class="row">
     <div>
       <div>ロック解除時にNFCを有効化</div>
-      <div class="help">画面ロックを解除するとNFCが自動的にONになります</div>
+      <div class="help">画面ロック解除時に自動でNFCをONにします</div>
     </div>
     <div class="toggle off" data-bind="nfc_unlock"></div>
   </div>
 </section>
+
 
 
   <!-- 近接共有 -->

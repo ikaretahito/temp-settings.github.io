@@ -92,3 +92,27 @@ function addAPN(){
   nameEl.value = '';
   apnEl.value = '';
 }
+// ストレージ：単位切替（GB <-> %）
+(function(){
+  const img = document.getElementById('storageChart');
+  if(!img) return;
+  const buttons = document.querySelectorAll('.seg-btn[data-unit]');
+  const SRC = {
+    gb:  'storage usageGB.png',       // ←GB版の画像ファイル名
+    pct: 'storage usageもどき.png'    // ←%版の画像ファイル名
+  };
+  const ALT = {
+    gb:  'ストレージ円グラフ（GB）',
+    pct: 'ストレージ円グラフ（%）'
+  };
+
+  buttons.forEach(b=>{
+    b.addEventListener('click', ()=>{
+      buttons.forEach(x=>{ x.classList.toggle('active', x===b);
+                           x.setAttribute('aria-pressed', x===b ? 'true':'false'); });
+      const unit = b.dataset.unit;
+      img.src = SRC[unit];
+      img.alt = ALT[unit];
+    });
+  });
+})();

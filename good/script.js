@@ -118,3 +118,36 @@ function addAPN(){
     });
   });
 })();
+// 画面：輝度スライダ
+(function(){
+  const r = document.getElementById('brightRange');
+  const v = document.getElementById('brightVal');
+  if(!r || !v) return;
+  const update = ()=>{ v.textContent = r.value; };
+  r.addEventListener('input', update);
+  update();
+})();
+
+// 画面：ダークモード切替（CSS変数でテーマ変更）
+(function(){
+  const t = document.querySelector('[data-bind="darkmode"]');
+  if(!t) return;
+  t.addEventListener('click', ()=>{
+    t.classList.toggle('on');
+    document.documentElement.classList.toggle('theme-dark', t.classList.contains('on'));
+  });
+})();
+
+// 画面：壁紙（ダミー動作）
+(function(){
+  const b = document.getElementById('btnWallpaper');
+  if(!b) return;
+  b.addEventListener('click', ()=> alert('壁紙ギャラリーを開きます（モック）'));
+})();
+
+// 画面：自動ロック（ダミー保存）
+(function(){
+  const s = document.getElementById('autolock');
+  if(!s) return;
+  s.addEventListener('change', ()=> console.log('自動ロック: ', s.value));
+})();

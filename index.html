@@ -116,8 +116,65 @@
     <div class="panel">すべてのアプリを表示・権限など…</div>
   </section>
 
-  <!-- そのほかのページはダミー -->
-  <section data-page="devices" hidden><h2>接続デバイス</h2><div class="panel">Bluetooth/NFC/近接共有</div></section>
+  <section data-page="devices" hidden>
+  <h2>接続デバイス</h2>
+
+  <!-- Bluetooth -->
+  <div class="row">
+    <div>
+      <div>Bluetooth</div>
+      <div class="help">
+        現在: ON / 接続中: AirPods Pro<br>
+        過去に接続: SRS-XB10
+      </div>
+    </div>
+    <div class="toggle on" data-bind="bt"></div>
+  </div>
+
+  <!-- NFC -->
+  <div class="row">
+    <div>
+      <div>NFC</div>
+      <div class="help">タッチで支払い・読み取り</div>
+    </div>
+    <div class="toggle off" data-bind="nfc"></div>
+  </div>
+
+  <div class="row">
+    <div>
+      <div>ロック解除時にNFCを有効化</div>
+      <div class="help">画面ロックを解除するとNFCが自動的にONになります</div>
+    </div>
+    <div class="toggle off" data-bind="nfc_unlock"></div>
+  </div>
+
+  <!-- 近接共有 -->
+  <div class="row">
+    <div>
+      <div>近接共有 (Nearby Share)</div>
+      <div class="help">近くのデバイスとファイルを共有</div>
+    </div>
+    <div class="toggle off" data-bind="nearby"></div>
+  </div>
+
+  <!-- 操作項目 -->
+  <div class="row">
+    <div>
+      <div>新しいデバイスを登録</div>
+      <div class="help">BluetoothやNFCで新しいデバイスを追加</div>
+    </div>
+    <button class="badge" onclick="alert('デバイス登録ウィザードへ')">開始</button>
+  </div>
+
+  <div class="row">
+    <div>
+      <div>ファイルを受け取る</div>
+      <div class="help">近接共有やBluetoothで受信</div>
+    </div>
+    <button class="badge" onclick="alert('受信待機中…')">受信</button>
+  </div>
+</section>
+
   <section data-page="mobile" hidden><h2>モバイル通信</h2><div class="panel">通信量・APN・テザリング</div></section>
   <section data-page="display" hidden><h2>画面</h2><div class="panel">輝度・壁紙・ダークモード</div></section>
   <section data-page="notifications" hidden><h2>通知</h2><div class="panel">通知の管理</div></section>

@@ -126,29 +126,8 @@
     <div class="panel">すべてのアプリを表示・権限など…</div>
   </section>
 
-  <section data-page="devices" hidden>
-  <h2>接続デバイス</h2>
-
-  <!-- Bluetooth -->
-  <div class="row">
-    <div>
-      <div>Bluetooth</div>
-      <div class="help">
-        現在: ON / 接続中: AirPods Pro<br>
-        過去に接続: SRS-XB10
-      </div>
-    </div>
-    <div class="toggle on" data-bind="bt"></div>
-  </div>
-<!-- 接続デバイス内のどこか（Bluetoothの下など）に追加 -->
-<div class="row" onclick="show('nfc')" style="cursor:pointer">
-  <div>
-    <div>NFC ▸</div>
-    <div class="help">タッチで支払い・読み取り / NFCロック解錠に利用可</div>
-  </div>
-</div>
-
- <section data-page="devices" hidden>
+ <!-- 接続デバイス（★1個だけにする） -->
+<section data-page="devices" hidden>
   <h2>接続デバイス</h2>
 
   <!-- Bluetooth -->
@@ -163,7 +142,7 @@
     <div class="toggle on" data-bind="bt"></div>
   </div>
 
-  <!-- NFCは詳細へ誘導（ここはトリガーだけ） -->
+  <!-- NFC は詳細へ誘導（トリガーだけ） -->
   <div class="row" onclick="show('nfc')" style="cursor:pointer">
     <div>
       <div>NFC ▸</div>
@@ -198,7 +177,7 @@
   </div>
 </section>
 
-<!-- devices の外（兄弟要素）に NFC を置く -->
+<!-- NFC 詳細（★devices の外＝兄弟要素） -->
 <section data-page="nfc" hidden>
   <h2>NFC</h2>
 
@@ -222,7 +201,6 @@
     <div class="toggle off" data-bind="nfc_unlock"></div>
   </div>
 </section>
-
   <section data-page="mobile" hidden><h2>モバイル通信</h2><div class="panel">通信量・APN・テザリング</div></section>
   <section data-page="display" hidden><h2>画面</h2><div class="panel">輝度・壁紙・ダークモード</div></section>
   <section data-page="notifications" hidden><h2>通知</h2><div class="panel">通知の管理</div></section>

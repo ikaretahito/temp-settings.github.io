@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>設定モック（優良UI）</title>
+<style>
+  :root { --line:#ddd; --fg:#222; --muted:#666; --bg:#f7f7f8; --card:#fff; }
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--fg);background:var(--bg);height:100vh;display:flex}
+  nav{width:260px;background:#fff;border-right:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:8px}
+  #q{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fafafa}
+  ul{list-style:none;margin:0;padding:0;overflow:auto}
+  li{padding:12px;border-radius:10px;display:flex;align-items:center;gap:10px;cursor:pointer}
+  li:hover{background:#f1f3f5}
+  li.active{background:#e8f3ff}
+  main{flex:1;overflow:auto;padding:20px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:10px 0}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin:10px 0}
+  .toggle{inline-size:52px;block-size:30px;border-radius:999px;background:#d0d4d9;position:relative;transition:.2s}
+  .toggle::after{content:"";position:absolute;inset-block:3px;inset-inline-start:3px;inline-size:24px;block-size:24px;border-radius:50%;background:#fff;transition:.2s}
+  .toggle.on{background:#19c37d}
+  .toggle.on::after{inset-inline-start:25px}
+  .help{color:var(--muted);font-size:14px;margin-top:6px}
+  .link{color:#0b66ff;text-decoration:underline;cursor:pointer}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .badge{background:#eef6ff;border:1px solid #cfe3ff;color:#0b66ff;font-size:12px;padding:4px 8px;border-radius:999px}
+</style>
+</head>
+<body>
+<nav>
+  <input id="q" placeholder="検索" />
+  <ul id="menu">
+    <li data-page="internet" class="active">インターネット</li>
+    <li data-page="devices">接続デバイス</li>
+    <li data-page="mobile">モバイル通信</li>
+    <li data-page="apps">アプリ</li>
+    <li data-page="display">画面</li>
+    <li data-page="battery">バッテリー</li>
+    <li data-page="notifications">通知</li>
+    <li data-page="storage">ストレージ</li>
+    <li data-page="system">システム</li>
+    <li data-page="about">端末情報</li>
+  </ul>
+</nav>
+
+<main id="content">
+  <!-- インターネット -->
+  <section data-page="internet">
+    <h2>インターネット <span class="badge">よく使う</span></h2>
+    <div class="row">
+      <div>
+        <div>機内モード</div>
+        <div class="help">通信を一時的に停止します</div>
+      </div>
+      <div class="toggle" data-bind="airplane"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div>Wi-Fi</div>
+        <div class="help">接続中: <strong id="ssid">School-WiFi</strong></div>
+      </div>
+      <div class="toggle on" data-bind="wifi"></div>
+    </div>
+    <div class="panel">
+      <div class="grid">
+        <div><strong>過去に接続したSSID</strong><div class="help">Home-5G / Cafe_Free / Library-AP</div></div>
+        <div><strong>自動接続</strong><div class="help"><span class="link" onclick="alert('自動接続: ON')">ON</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- バッテリー（タスク用に重要要素を配置） -->
+  <section data-page="battery" hidden>
+    <h2>バッテリー</h2>
+    <div class="row">
+      <div>
+        <div>バッテリーの状態</div>
+        <div class="help">最大容量: <strong id="maxcap">95%</strong></div>
+      </div>
+      <div class="badge">表示のみ</div>
+    </div>
+    <div class="row">
+      <div>
+        <div>省電力モード</div>
+        <div class="help">バッテリー持ちを優先します</div>
+      </div>
+      <div class="toggle" data-bind="saver"></div>
+    </div>
+    <div class="panel">
+      電池使用量（過去24時間）<div class="help">グラフは省略</div>
+    </div>
+  </section>
+
+  <!-- 位置情報権限（アプリ） -->
+  <section data-page="apps" hidden>
+    <h2>アプリ</h2>
+    <div class="row">
+      <div>
+        <div>地図アプリ</div>
+        <div class="help">権限: 位置情報 <span id="locState">許可</span></div>
+      </div>
+      <button class="badge" onclick="toggleLocation()">切り替え</button>
+    </div>
+    <div class="panel">すべてのアプリを表示・権限など…</div>
+  </section>
+
+  <!-- そのほかのページはダミー -->
+  <section data-page="devices" hidden><h2>接続デバイス</h2><div class="panel">Bluetooth/NFC/近接共有</div></section>
+  <section data-page="mobile" hidden><h2>モバイル通信</h2><div class="panel">通信量・APN・テザリング</div></section>
+  <section data-page="display" hidden><h2>画面</h2><div class="panel">輝度・壁紙・ダークモード</div></section>
+  <section data-page="notifications" hidden><h2>通知</h2><div class="panel">通知の管理</div></section>
+  <section data-page="storage" hidden><h2>ストレージ</h2><div class="panel">円グラフ（省略）/ 詳細</div></section>
+  <section data-page="system" hidden><h2>システム</h2><div class="panel">言語 / OSアップデート / 時刻</div></section>
+  <section data-page="about" hidden><h2>端末情報</h2><div class="panel">デバイス名 / IMEI / ビルド番号</div></section>
+</main>
+
+<script>
+  // ページ切替
+  const content = document.getElementById('content');
+  const pages = [...content.querySelectorAll('section[data-page]')];
+  document.getElementById('menu').addEventListener('click', e=>{
+    const li = e.target.closest('li'); if(!li) return;
+    document.querySelectorAll('li').forEach(x=>x.classList.toggle('active', x===li));
+    const name = li.dataset.page;
+    pages.forEach(p=>p.hidden = p.dataset.page!==name);
+  });
+
+  // トグル動作
+  document.querySelectorAll('.toggle').forEach(t=>{
+    t.addEventListener('click', ()=> t.classList.toggle('on'));
+  });
+
+  // 位置情報権限トグル
+  function toggleLocation(){
+    const el = document.getElementById('locState');
+    el.textContent = (el.textContent==='許可') ? '不許可' : '許可';
+  }
+
+  // 簡易計測（達成時間などをコンソールに）
+  const start = performance.now();
+  window.markDone = label => console.log(label, Math.round(performance.now()-start)+'ms 経過');
+  // 例: タスク完了時に markDone('バッテリー最大容量を確認できた');
+</script>
+</body>
+</html>

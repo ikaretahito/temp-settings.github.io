@@ -435,3 +435,97 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   routeFromHash();
 });
+/* ========= 端末情報 ========= */
+function bindAbout(){
+  // デバイス名編集
+  const nameEl = document.getElementById("deviceName");
+  document.getElementById("btnRename")?.addEventListener("click", () => {
+    const next = prompt("デバイス名を入力", nameEl.textContent || "Yonyon Device");
+    if(next && next.trim()){
+      nameEl.textContent = next.trim();
+      alert("デバイス名を変更しました（モック）");
+    }
+  });
+
+  // バッテリー（ゆっくり減るモック）
+  const bat = document.getElementById("batteryPct");
+  if(bat){
+    let level = 96 + Math.random()*4; // 96〜100で開始
+    clearInterval(window.__batTimer);
+    window.__batTimer = setInterval(() => {
+      level = Math.max(0, level - 0.05); // 5分で約15%減ペース（見た目用）
+      bat.textContent = Math.round(level) + "%";
+    }, 1000);
+  }
+
+  // 起動時間（秒インクリメント）
+  const up = document.getElementById("uptime");
+  if(up){
+    let t = 0;
+    clearInterval(window.__upTimer);
+    window.__upTimer = setInterval(() => { t++; up.textContent = t + "秒"; }, 1000);
+  }
+
+  // ビルド番号 → 開発者モード（7回）
+  const buildRow = document.getElementById("buildRow");
+  const devHint = document.getElementById("devHint");
+  let tap = 0;
+  buildRow?.addEventListener("click", () => {
+    tap++;
+    if(tap >= 7){
+      devHint.hidden = false;
+      // 保存してもOK
+      try{ Store.set("devMode", true); }catch{}
+    }
+  });
+
+  // 法的情報（Regulatory / Legal）モーダル
+  const modal = document.getElementById("legalModal");
+  const title = document.getElementById("legalDocTitle");
+  const body  = document.getElementById("legalDocBody");
+  const openLegal = (kind) => {
+    const docs = {
+      regulatory: {
+        title: "Regulatory Notice",
+        text:
+`本端末は各国/地域の無線規制に準拠しています（モック）。
+・技適/JATE 相当の表示
+・FCC ID: 2ABCD-MOCK123（架空）
+・CE／UKCA 等の準拠マーク（イメージ）`
+      },
+      license: {
+        title: "Licenses (Open-source / Third-party)",
+        text:
+`この端末には次のオープンソース・ソフトウェアが含まれます（モック）。
+・ExampleLib 1.2（MIT）
+・FooBar Core（Apache-2.0）
+・Baz UI（BSD-3）
+
+全文は設定アプリ内に同梱された LICENSES.txt を参照（モック）。`
+      },
+      warranty: {
+        title: "Warranty（保証・重要事項）",
+        text:
+`保証は購入日から1年間（モック）。水没/改造/不適切な使用は保証対象外。
+バッテリーは消耗品であり経年劣化は保証対象外（モック）。`
+      },
+      rf: {
+        title: "RF Exposure（電波暴露）",
+        text:
+`本端末は人体への電波暴露ガイドラインに適合（モック）。
+・最大SAR： 頭部 0.70 W/kg、身体 0.85 W/kg（10g, 架空）
+・使用時は金属アクセサリを端末から離して利用してください（モック）。`
+      }
+    };
+    const d = docs[kind] || {title:"Document", text:"(no data)"};
+    title.textContent = d.title;
+    body.textContent = d.text;
+    modal.hidden = false;
+  };
+
+  document.querySelectorAll('button[data-legal]')?.forEach(b=>{
+    b.addEventListener('click', () => openLegal(b.dataset.legal));
+  });
+  document.getElementById("legalClose")?.addEventListener("click", ()=> modal.hidden = true);
+  modal?.addEventListener("click", (e)=>{ if(e.target === modal) modal.hidden = true; });
+}

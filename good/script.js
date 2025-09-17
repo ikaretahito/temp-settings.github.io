@@ -387,3 +387,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const m = location.hash.match(/^#app-(.+)$/);
   if(m && Apps.byId(m[1])) openAppDetail(m[1]);
 });
+// 既存の popstate を置き換え or 追記
+window.addEventListener("popstate", () => {
+  const h = location.hash || "";
+  const m = h.match(/^#app-(.+)$/);
+  if (m && Apps.byId(m[1])) { 
+    openAppDetail(m[1]);
+    return;
+  }
+  const name = h.replace("#","") || "internet";
+  show(name);
+  document.querySelectorAll("#menu li")
+    .forEach(li => li.classList.toggle("active", li.dataset.page === name));
+});

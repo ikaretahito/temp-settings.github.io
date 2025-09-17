@@ -400,3 +400,37 @@ window.addEventListener("popstate", () => {
   document.querySelectorAll("#menu li")
     .forEach(li => li.classList.toggle("active", li.dataset.page === name));
 });
+// 1) ルータ
+function routeFromHash(){
+  const h = location.hash.slice(1);
+  const m = h.match(/^app-(.+)$/);
+  if (m && Apps.byId(m[1])) { openAppDetail(m[1]); return; }
+  const name = h || "internet";
+  show(name);
+  document.querySelectorAll("#menu li")
+    .forEach(li => li.classList.toggle("active", li.dataset.page === name));
+}
+
+// 2) 初期化と履歴
+document.addEventListener("DOMContentLoaded", () => {
+  // …既存の初期化の最後に
+  routeFromHash();
+  window.addEventListener("popstate", routeFromHash);
+});
+
+// 3) 左メニュークリック時は pushState
+menu.addEventListener("click", (e) => {
+  const li = e.target.closest("li[data-page]");
+  if(!li) return;
+  const name = li.dataset.page;
+  show(name);
+  highlight(name);
+  history.pushState(null, "", `#${name}`);
+});
+
+// 4) アプリ詳細遷移も pushState
+function openAppDetail(id){
+  // …既存処理…
+  show("app-detail");
+  history.pushState(null, "", `#app-${id}`);
+}

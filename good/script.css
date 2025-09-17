@@ -161,3 +161,15 @@ section[data-page="display"] input[type="range"]{
 @media (prefers-reduced-motion: reduce){
   .toggle, .toggle::after{ transition:none; }
 }
+/* アプリアイコンの簡易ダミー（頭文字で丸） */
+.app-icon{
+  inline-size:32px;
+  block-size:32px;
+  border-radius:50%;
+  background:var(--active);
+  color:var(--fg);
+  display:grid;
+  place-items:center;
+  font-weight:600;
+}
+.app-row{ cursor:pointer; }

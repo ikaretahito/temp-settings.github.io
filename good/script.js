@@ -598,3 +598,65 @@ document.getElementById("legalModal")?.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeLegal();
 });
+/* ====== 端末情報：イベントハンドラ ====== */
+
+// ドキュメントのクリックを横取りして「開く」「閉じる」「変更」を処理
+document.addEventListener("click", (e) => {
+  // --- 法的文書を開く ---
+  const legalBtn = e.target.closest("button[data-legal]");
+  if (legalBtn) {
+    e.preventDefault();
+    openLegal(legalBtn.dataset.legal);
+    return;
+  }
+
+  // --- 法的モーダルを閉じる ---
+  if (e.target.closest("#legalClose")) {
+    e.preventDefault();
+    closeLegal();
+    return;
+  }
+
+  // --- デバイス名を変更 ---
+  if (e.target.closest("#btnRename")) {
+    e.preventDefault();
+    const nameEl = document.getElementById("deviceName");
+    const next = prompt("デバイス名を入力", nameEl?.textContent || "Yonyon Device");
+    if (next && next.trim()) {
+      if (nameEl) nameEl.textContent = next.trim();
+      alert("デバイス名を変更しました（モック）");
+    }
+    return;
+  }
+});
+
+// モーダル外クリックやEscキーで閉じる
+document.getElementById("legalModal")?.addEventListener("click", (e) => {
+  if (e.target.id === "legalModal") closeLegal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeLegal();
+});
+
+// モーダル開閉用関数（未定義なら補完）
+window.openLegal = window.openLegal || function(kind){
+  const modal = document.getElementById("legalModal");
+  const title = document.getElementById("legalDocTitle");
+  const body  = document.getElementById("legalDocBody");
+  if (!modal || !title || !body) return;
+
+  const DOCS = {
+    regulatory:{ title:"Regulatory Notice", text:"規制に関する案内（モック）" },
+    license:{ title:"Licenses", text:"OSS/サードパーティライセンス一覧（モック）" },
+    warranty:{ title:"Warranty", text:"保証情報（モック）" },
+    rf:{ title:"RF Exposure", text:"電波暴露に関する説明（モック）" }
+  };
+  const d = DOCS[kind] || {title:"Document", text:""};
+  title.textContent = d.title;
+  body.textContent  = d.text;
+  modal.hidden = false;
+};
+window.closeLegal = window.closeLegal || function(){
+  const modal = document.getElementById("legalModal");
+  if (modal) modal.hidden = true;
+};

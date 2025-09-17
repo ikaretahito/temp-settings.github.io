@@ -1,140 +1,238 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const content = document.getElementById('content');
-  const menu = document.getElementById('menu');
+// 状態管理（永続化つき）
+const Store = (() => {
+  const KEY = "pref-ui-state";
+  const def = {
+    airplane: false, wifi: true, saver: false, bt: true,
+    nearby: false, nfc: false, nfc_unlock: false, cap: false,
+    tether: false, notifyData: true, autoBrightness: true,
+    darkmode: false, unit: "gb", capValue: 20, apn: "carrier.example.jp",
+    locAllowed: true, brightness: 60
+  };
+  let state = { ...def, ...JSON.parse(localStorage.getItem(KEY) || "{}") };
+  const save = () => localStorage.setItem(KEY, JSON.stringify(state));
+  const set = (k, v) => { state[k] = v; save(); };
+  const get = (k) => state[k];
+  return { get, set, all: () => ({...state}), def };
+})();
 
-  // 左メニュー切替
-  if (menu && content) {
-    const pages = [...content.querySelectorAll('section[data-page]')];
-    menu.addEventListener('click', e => {
-      const li = e.target.closest('li');
-      if (!li) return;
-      document.querySelectorAll('li').forEach(x => x.classList.toggle('active', x === li));
-      const name = li.dataset.page;
-      pages.forEach(p => p.hidden = p.dataset.page !== name);
+// 汎用: トグルDOMのon/offと状態同期
+function bindToggles(){
+  document.querySelectorAll(".toggle[data-bind]").forEach(el => {
+    const key = el.dataset.bind;
+    el.classList.toggle("on", !!Store.get(key));
+    el.addEventListener("click", () => {
+      const now = el.classList.toggle("on");
+      Store.set(key, now);
+
+      // 連動動作
+      if(key === "darkmode"){
+        document.body.classList.toggle("theme-dark", now);
+      }
+      if(key === "cap"){
+        document.getElementById("capPanel")?.toggleAttribute("hidden", !now);
+      }
+    });
+  });
+}
+
+// 左メニュー: クリックでセクション切替 + アクティブ表示
+function bindMenu(){
+  const menu = document.getElementById("menu");
+  const content = document.getElementById("content");
+  if(!menu || !content) return;
+
+  const pages = [...content.querySelectorAll('section[data-page]')];
+
+  // 初期: hashまたはactiveに合わせて表示
+  const initial = location.hash.replace("#","") ||
+    (menu.querySelector("li.active")?.dataset.page ?? pages[0]?.dataset.page);
+  show(initial);
+  highlight(initial);
+
+  function highlight(name){
+    menu.querySelectorAll("li").forEach(li =>
+      li.classList.toggle("active", li.dataset.page === name));
+  }
+
+  menu.addEventListener("click", (e) => {
+    const li = e.target.closest("li[data-page]");
+    if(!li) return;
+    const name = li.dataset.page;
+    show(name);
+    highlight(name);
+    history.replaceState(null, "", `#${name}`);
+  });
+}
+
+// HTML側のshow(name)を利用
+// window.show is already defined inline in HTML
+
+// 検索: 左メニューをフィルタ
+function bindSearch(){
+  const q = document.getElementById("q");
+  const items = [...document.querySelectorAll("#menu li")];
+  if(!q) return;
+  const norm = s => s.normalize("NFKC").toLowerCase();
+  q.addEventListener("input", () => {
+    const kw = norm(q.value);
+    items.forEach(li => {
+      const hit = norm(li.textContent).includes(kw);
+      li.style.display = hit ? "" : "none";
+    });
+  });
+}
+
+// 画面系: 輝度・ダークモード・壁紙ボタン
+function bindDisplay(){
+  const r = document.getElementById("brightRange");
+  const label = document.getElementById("brightVal");
+  if(r && label){
+    r.value = Store.get("brightness");
+    label.textContent = r.value;
+    r.addEventListener("input", () => {
+      label.textContent = r.value;
+    });
+    r.addEventListener("change", () => {
+      Store.set("brightness", Number(r.value));
     });
   }
 
-  // トグル（見た目だけON/OFF）
-  document.querySelectorAll('.toggle').forEach(t => {
-    t.addEventListener('click', () => t.classList.toggle('on'));
+  // ダークモード初期反映
+  document.body.classList.toggle("theme-dark", !!Store.get("darkmode"));
+
+  // 壁紙
+  document.getElementById("btnWallpaper")?.addEventListener("click", () => {
+    alert("壁紙選択ダイアログ（モック）");
   });
 
-  // 位置情報トグル（アプリ）
-  const locEl = document.getElementById('locState');
-  if (locEl) {
-    const btn = document.querySelector('section[data-page="apps"] button.badge');
-    if (btn) btn.addEventListener('click', () => {
-      locEl.textContent = (locEl.textContent === '許可') ? '不許可' : '許可';
+  // 自動ロック: 保存だけ
+  const autolock = document.getElementById("autolock");
+  if(autolock){
+    autolock.addEventListener("change", () => {
+      Store.set("autolock", autolock.value);
     });
+    if(Store.get("autolock")) autolock.value = Store.get("autolock");
+  }
+}
+
+// ストレージ: 単位切替（画像差し替え）
+function bindStorage(){
+  const chart = document.getElementById("storageChart");
+  const segBtns = document.querySelectorAll(".seg-btn[data-unit]");
+  if(!chart || !segBtns.length) return;
+
+  function apply(unit){
+    if(unit === "gb"){
+      chart.src = "storage usageGB.png";
+      chart.alt = "ストレージ円グラフ（GB）";
+    }else{
+      chart.src = "storage usagePct.png";
+      chart.alt = "ストレージ円グラフ（%）";
+    }
+    segBtns.forEach(b => {
+      const active = b.dataset.unit === unit;
+      b.classList.toggle("active", active);
+      b.setAttribute("aria-pressed", String(active));
+    });
+    Store.set("unit", unit);
   }
 
-  // 通信量制限（モバイル通信）
-  const capToggle = document.querySelector('[data-bind="cap"]');
-  const capPanel = document.getElementById('capPanel');
-  if (capToggle && capPanel) {
-    capToggle.addEventListener('click', () => {
-      setTimeout(() => {
-        capPanel.hidden = !capToggle.classList.contains('on');
-      }, 0);
-    });
+  segBtns.forEach(b => {
+    b.addEventListener("click", () => apply(b.dataset.unit));
+  });
+
+  apply(Store.get("unit") || "gb");
+}
+
+// モバイル通信: 上限・バー反映等
+function bindMobile(){
+  const capPanel = document.getElementById("capPanel");
+  const capInput = document.getElementById("capInput");
+  const capNow = document.getElementById("capNow");
+  const bar = document.getElementById("dataUsedBar");
+
+  // 初期: capの表示
+  const capOn = !!Store.get("cap");
+  capPanel?.toggleAttribute("hidden", !capOn);
+
+  // cap値初期化
+  if(capInput){
+    capInput.value = Store.get("capValue") ?? 20;
+  }
+  if(capNow){
+    capNow.textContent = Store.get("capValue") ?? 20;
   }
 
-  // ページ遷移API（NFC ▸ など）
-  window.show = function(name){
-    document.querySelectorAll('main section[data-page]')
-      .forEach(s => s.hidden = (s.dataset.page !== name));
-  };
+  // 使用量バーの例: 11.8 / 20 → 59%
+  if(bar){
+    // HTML側に初期幅があるが、cap変更後に再計算できるよう関数化
+    const updateBar = () => {
+      const used = 11.8; // モックの固定値（必要ならStore化可能）
+      const cap = Number(Store.get("capValue") ?? 20);
+      const pct = Math.min(100, Math.round((used / cap) * 100));
+      bar.style.width = pct + "%";
+    };
+    updateBar();
+    // 外から呼べるように保存
+    window.__updateDataBar = updateBar;
+  }
+}
 
-  // ===== ストレージ：単位切替（GB <-> %） =====
-  const storageImg = document.getElementById('storageChart');
-  if (storageImg) {
-    const buttons = document.querySelectorAll('.seg-btn[data-unit]');
-    const SRC = {
-      gb:  'storage usageGB.png',       // 単位なしのGB版
-      pct: 'storage usageもどき.png'    // %版
-    };
-    const ALT = {
-      gb:  'ストレージ円グラフ（GB）',
-      pct: 'ストレージ円グラフ（%）'
-    };
-    buttons.forEach(b=>{
-      b.addEventListener('click', ()=>{
-        buttons.forEach(x=>{
-          x.classList.toggle('active', x===b);
-          x.setAttribute('aria-pressed', x===b ? 'true':'false');
-        });
-        const unit = b.dataset.unit;
-        storageImg.src = SRC[unit];
-        storageImg.alt = ALT[unit];
+// 位置情報（アプリ）
+window.toggleLocation = function(){
+  const next = !Store.get("locAllowed");
+  Store.set("locAllowed", next);
+  const el = document.getElementById("locState");
+  if(el) el.textContent = next ? "許可" : "拒否";
+};
+
+// APN
+window.setAPN = function(name){
+  Store.set("apn", name);
+  document.getElementById("apnCurrent").textContent = name;
+  alert(`APNを ${name} に切替えました（モック）`);
+};
+window.addAPN = function(){
+  const name = document.getElementById("apnName")?.value?.trim();
+  const apn  = document.getElementById("apnValue")?.value?.trim();
+  if(!name || !apn){ alert("名称とAPNを入力してください"); return; }
+  // 実装簡略化：選択中にする
+  setAPN(apn);
+  document.getElementById("apnName").value = "";
+  document.getElementById("apnValue").value = "";
+};
+
+// データ上限の適用
+window.applyCap = function(){
+  const v = Number(document.getElementById("capInput").value);
+  if(isNaN(v) || v < 1 || v > 200){
+    alert("1〜200の範囲で入力してください");
+    return;
+  }
+  Store.set("capValue", v);
+  document.getElementById("capNow").textContent = v;
+  window.__updateDataBar?.();
+  alert(`上限を ${v} GB に設定しました`);
+};
+
+// 初期化
+document.addEventListener("DOMContentLoaded", () => {
+  bindMenu();
+  bindSearch();
+  bindToggles();
+  bindDisplay();
+  bindStorage();
+  bindMobile();
+
+  // ページ直接リンク（hash）の戻り/進む対応
+  window.addEventListener("popstate", () => {
+    const name = location.hash.replace("#","");
+    if(name){
+      show(name);
+      // 左メニューの見た目も更新
+      document.querySelectorAll("#menu li").forEach(li => {
+        li.classList.toggle("active", li.dataset.page === name);
       });
-    });
-  }
-
-  // ===== 画面：輝度スライダ（％連動） =====
-  const brightRange = document.getElementById('brightRange');
-  const brightVal   = document.getElementById('brightVal');
-  if (brightRange && brightVal) {
-    const update = () => { brightVal.textContent = brightRange.value; };
-    brightRange.addEventListener('input', update);
-    update();
-  }
-
-  // ===== 画面：ダークモード切替 =====
-  const darkToggle = document.querySelector('[data-bind="darkmode"]');
-  if (darkToggle) {
-    darkToggle.addEventListener('click', () => {
-      const on = darkToggle.classList.toggle('on');
-      document.documentElement.classList.toggle('theme-dark', on);
-    });
-  }
-
-  // ===== 画面：壁紙ボタン =====
-  const btnWallpaper = document.getElementById('btnWallpaper');
-  if (btnWallpaper) {
-    btnWallpaper.addEventListener('click', () => {
-      alert('壁紙ギャラリーを開きます（モック）');
-    });
-  }
-
-  // ===== 画面：自動ロック（ダミー保存） =====
-  const autolock = document.getElementById('autolock');
-  if (autolock) {
-    autolock.addEventListener('change', () => {
-      console.log('自動ロック: ', autolock.value);
-    });
-  }
-
-  // 簡易計測
-  const start = performance.now();
-  window.markDone = label => console.log(label, Math.round(performance.now() - start) + 'ms 経過');
+    }
+  });
 });
-
-// ===== モバイル通信：APNユーティリティ =====
-function applyCap(){
-  const input = document.getElementById('capInput');
-  const now = document.getElementById('capNow');
-  if (!input || !now) return;
-  const v = Number(input.value || 20);
-  now.textContent = v;
-  alert('上限を ' + v + ' GB に設定しました');
-}
-function setAPN(apn){
-  const el = document.getElementById('apnCurrent');
-  if (!el) return;
-  el.textContent = apn;
-  alert('APNを ' + apn + ' に切り替えました');
-}
-function addAPN(){
-  const nameEl = document.getElementById('apnName');
-  const apnEl  = document.getElementById('apnValue');
-  if (!nameEl || !apnEl) return;
-  const name = nameEl.value.trim();
-  const apn  = apnEl.value.trim();
-  if(!name || !apn){ alert('名称とAPNを入力してください'); return; }
-  const list = document.querySelector('section[data-page="apn"] .panel ul');
-  if (!list) return;
-  const li = document.createElement('li');
-  li.innerHTML = `<button class="badge" onclick="setAPN('${apn}')">${apn}</button> <span class="note">(${name})</span>`;
-  list.appendChild(li);
-  nameEl.value = ''; apnEl.value = '';
-}

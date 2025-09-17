@@ -1,0 +1,163 @@
+:root{
+  --line:#ddd;
+  --fg:#222;
+  --muted:#666;
+  --bg:#f7f7f8;
+  --card:#fff;
+  --hover:#f1f3f5;
+  --active:#e8f3ff;
+  --chip-bg:#eef6ff;
+  --chip-border:#cfe3ff;
+  --accent:#0b66ff;
+  --toggle-on:#19c37d;
+  --progress-bg:#eee;
+}
+
+/* ダークテーマは “変数だけ” を上書き */
+body.theme-dark{
+  --bg:#111418;
+  --fg:#e7e9ed;
+  --muted:#9aa3ad;
+  --card:#171a1f;
+  --line:#2a2f36;
+  --hover:#1d2229;
+  --active:#2b3139;
+  --chip-bg:#1e2630;
+  --chip-border:#2e3a48;
+  --accent:#5c9dff;
+  --toggle-on:#25d08c;
+  --progress-bg:#20262d;
+}
+
+/* 以降は “常に” 変数参照。色の直書きを排除 */
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  color:var(--fg);
+  background:var(--bg);
+  height:100vh;
+  display:flex;
+}
+
+nav{
+  width:260px;
+  background:var(--card);
+  border-right:1px solid var(--line);
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+#q{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--card);
+  color:var(--fg);
+}
+
+ul{list-style:none;margin:0;padding:0;overflow:auto}
+
+li{
+  padding:12px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  cursor:pointer;
+  color:var(--fg);
+}
+li:hover{ background:var(--hover); }
+li.active{ background:var(--active); }
+
+main{ flex:1; overflow:auto; padding:20px; }
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px;
+  margin:10px 0;
+}
+
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--card);
+  margin:10px 0;
+}
+
+.toggle{
+  inline-size:52px;
+  block-size:30px;
+  border-radius:999px;
+  background:#d0d4d9;
+  position:relative;
+  transition:.2s;
+}
+.toggle::after{
+  content:"";
+  position:absolute;
+  inset-block:3px;
+  inset-inline-start:3px;
+  inline-size:24px;
+  block-size:24px;
+  border-radius:50%;
+  background:#fff;
+  transition:.2s;
+}
+.toggle.on{ background:var(--toggle-on); }
+.toggle.on::after{ inset-inline-start:25px; }
+
+.help{ color:var(--muted); font-size:14px; margin-top:6px; }
+.link{ color:var(--accent); text-decoration:underline; cursor:pointer; }
+
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+.badge{
+  background:var(--chip-bg);
+  border:1px solid var(--chip-border);
+  color:var(--accent);
+  font-size:12px;
+  padding:4px 8px;
+  border-radius:999px;
+}
+
+[data-page="battery"] .battery-stack{ display:flex; flex-direction:column; gap:12px; }
+
+.progress{
+  inline-size:100%;
+  block-size:10px;
+  background:var(--progress-bg);
+  border-radius:999px;
+  overflow:hidden;
+}
+.progress>span{ display:block; block-size:100%; inline-size:0; background:var(--accent); }
+
+.note{ color:var(--muted); font-size:12px; }
+
+.seg{ display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.seg-btn{ padding:6px 12px; background:var(--card); border:0; cursor:pointer; color:var(--fg); }
+.seg-btn.active{ background:var(--active); }
+.seg-btn:focus{ outline:2px solid #9cc7ff; outline-offset:1px; }
+
+/* range の見た目 */
+section[data-page="display"] input[type="range"]{
+  inline-size:240px;
+  block-size:6px;
+  accent-color:var(--accent);
+}
+
+/* アクセシビリティ */
+.toggle[role="switch"]{ cursor:pointer; }
+.toggle:focus-visible{ outline:2px solid #9cc7ff; outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){
+  .toggle, .toggle::after{ transition:none; }
+}

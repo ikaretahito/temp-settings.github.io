@@ -416,7 +416,121 @@
   </div>
 </section>
 
-  <section data-page="system" hidden><h2>システム</h2><div class="panel">言語 / OSアップデート / 時刻</div></section>
+  <!-- システム -->
+<section data-page="system" hidden>
+  <h2>システム</h2>
+
+  <!-- 言語 -->
+  <div class="panel">
+    <strong>言語</strong>
+    <div class="row">
+      <div>
+        <div>表示言語</div>
+        <div class="help">UIの表示言語を変更します</div>
+      </div>
+      <select id="lang" aria-label="表示言語">
+        <option value="ja">日本語</option>
+        <option value="en">English</option>
+        <option value="ko">한국어</option>
+        <option value="zh-CN">中文（简体）</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- OSアップデート -->
+  <div class="panel">
+    <strong>OSアップデート</strong>
+    <div class="row">
+      <div>
+        <div id="osStatus">最終確認: 未実行</div>
+        <div class="help">更新を確認して最新の状態にします</div>
+      </div>
+      <button class="badge" id="btnUpdateCheck">更新を確認</button>
+    </div>
+  </div>
+
+  <!-- キーボード -->
+  <div class="panel">
+    <strong>キーボード</strong>
+    <div class="row">
+      <div>
+        <div>入力方法（IME）</div>
+        <div class="help">既定の入力方法を選択</div>
+      </div>
+      <select id="ime" aria-label="入力方法">
+        <option value="jp">日本語入力（IME）</option>
+        <option value="us">英語（US）</option>
+        <option value="kana">かな配列</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 時刻・日付 -->
+  <div class="panel">
+    <strong>時刻・日付</strong>
+    <div class="row">
+      <div>
+        <div>タイムゾーン</div>
+        <div class="help">表示時刻の基準</div>
+      </div>
+      <select id="tz" aria-label="タイムゾーン">
+        <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+        <option value="UTC">UTC</option>
+        <option value="America/Los_Angeles">America/Los_Angeles (PT)</option>
+        <option value="Europe/London">Europe/London (UK)</option>
+      </select>
+    </div>
+    <div class="row">
+      <div>
+        <div>自動設定（ネットワーク/NTP）</div>
+        <div class="help">ネットワークの時刻に合わせます（モック動作）</div>
+      </div>
+      <div class="toggle" data-bind="autoTime" role="switch" aria-pressed="true"></div>
+    </div>
+    <div class="row">
+      <div>
+        <div>現在時刻</div>
+        <div class="help">選択中TZでの日時</div>
+      </div>
+      <div id="nowTime" class="mono">--:--:--</div>
+    </div>
+    <div class="row">
+      <div>
+        <div>NTPサーバー</div>
+        <div class="help">例: pool.ntp.org（モック）</div>
+      </div>
+      <input id="ntpServer" value="pool.ntp.org" style="inline-size:220px">
+      <button class="badge" id="btnNTP">今すぐ同期</button>
+    </div>
+  </div>
+
+  <!-- リセット -->
+  <div class="panel">
+    <strong>リセット</strong>
+    <div class="row">
+      <div>
+        <div>ネットワーク設定のリセット</div>
+        <div class="help">Wi-Fi / モバイル / Bluetooth設定を初期化</div>
+      </div>
+      <button class="badge" id="btnResetNet">実行</button>
+    </div>
+    <div class="row">
+      <div>
+        <div>すべての設定をリセット</div>
+        <div class="help">個人データを残して設定のみ初期化</div>
+      </div>
+      <button class="badge" id="btnResetAll">実行</button>
+    </div>
+    <div class="row">
+      <div>
+        <div>出荷時に初期化（工場出荷状態）</div>
+        <div class="help">すべてのデータと設定を削除（モック）</div>
+      </div>
+      <button class="badge" id="btnFactory">実行</button>
+    </div>
+  </div>
+</section>
+
   <section data-page="about" hidden><h2>端末情報</h2><div class="panel">デバイス名 / IMEI / ビルド番号</div></section>
 </main>
 <!-- </body> の直前にこれだけ -->

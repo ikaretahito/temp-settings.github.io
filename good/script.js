@@ -1,121 +1,99 @@
-// 状態管理（永続化つき）
+/* ========= 永続ストア ========= */
 const Store = (() => {
   const KEY = "pref-ui-state";
   const def = {
-    airplane: false, wifi: true, saver: false, bt: true,
-    nearby: false, nfc: false, nfc_unlock: false, cap: false,
-    tether: false, notifyData: true, autoBrightness: true,
-    darkmode: false, unit: "gb", capValue: 20, apn: "carrier.example.jp",
-    locAllowed: true, brightness: 60
+    airplane:false, wifi:true, saver:false, bt:true, nearby:false,
+    nfc:false, nfc_unlock:false, cap:false, tether:false, notifyData:true,
+    autoBrightness:true, darkmode:false, unit:"gb", capValue:20, apn:"carrier.example.jp",
+    locAllowed:true, brightness:60, autolock:"1m"
   };
   let state = { ...def, ...JSON.parse(localStorage.getItem(KEY) || "{}") };
   const save = () => localStorage.setItem(KEY, JSON.stringify(state));
-  const set = (k, v) => { state[k] = v; save(); };
-  const get = (k) => state[k];
-  return { get, set, all: () => ({...state}), def };
+  return { get:k=>state[k], set:(k,v)=>{ state[k]=v; save(); }, all:()=>({...state}), def };
 })();
 
-// 汎用: トグルDOMのon/offと状態同期
-function bindToggles(){
-  document.querySelectorAll(".toggle[data-bind]").forEach(el => {
-    const key = el.dataset.bind;
-    el.classList.toggle("on", !!Store.get(key));
-    el.addEventListener("click", () => {
-      const now = el.classList.toggle("on");
-      Store.set(key, now);
-
-      // 連動動作
-      if(key === "darkmode"){
-        document.body.classList.toggle("theme-dark", now);
-      }
-      if(key === "cap"){
-        document.getElementById("capPanel")?.toggleAttribute("hidden", !now);
-      }
-    });
+/* ========= ルーティング ========= */
+function show(name){
+  document.querySelectorAll('section[data-page]').forEach(s => {
+    s.hidden = (s.dataset.page !== name);
   });
 }
+function highlight(name){
+  document.querySelectorAll("#menu li")
+    .forEach(li => li.classList.toggle("active", li.dataset.page === name));
+}
+function routeFromHash(){
+  const h = location.hash.slice(1);
+  const m = h.match(/^app-(.+)$/);
+  if (m && Apps.byId(m[1])) { openAppDetail(m[1]); return; }
+  const name = h || document.querySelector('#menu li')?.dataset.page || "internet";
+  show(name); highlight(name);
+}
 
-// 左メニュー: クリックでセクション切替 + アクティブ表示
+/* ========= メニュー・検索 ========= */
 function bindMenu(){
   const menu = document.getElementById("menu");
-  const content = document.getElementById("content");
-  if(!menu || !content) return;
+  if(!menu) return;
+  // 初期
+  document.body.classList.toggle("theme-dark", !!Store.get("darkmode"));
+  routeFromHash();
 
-  const pages = [...content.querySelectorAll('section[data-page]')];
-
-  // 初期: hashまたはactiveに合わせて表示
-  const initial = location.hash.replace("#","") ||
-    (menu.querySelector("li.active")?.dataset.page ?? pages[0]?.dataset.page);
-  show(initial);
-  highlight(initial);
-
-  function highlight(name){
-    menu.querySelectorAll("li").forEach(li =>
-      li.classList.toggle("active", li.dataset.page === name));
-  }
-
-  menu.addEventListener("click", (e) => {
-    const li = e.target.closest("li[data-page]");
-    if(!li) return;
+  menu.addEventListener("click", e => {
+    const li = e.target.closest("li[data-page]"); if(!li) return;
     const name = li.dataset.page;
-    show(name);
-    highlight(name);
-    history.replaceState(null, "", `#${name}`);
+    show(name); highlight(name);
+    history.pushState(null, "", `#${name}`);
   });
 }
-
-// HTML側のshow(name)を利用
-// window.show is already defined inline in HTML
-
-// 検索: 左メニューをフィルタ
 function bindSearch(){
-  const q = document.getElementById("q");
+  const q = document.getElementById("q"); if(!q) return;
   const items = [...document.querySelectorAll("#menu li")];
-  if(!q) return;
   const norm = s => s.normalize("NFKC").toLowerCase();
   q.addEventListener("input", () => {
     const kw = norm(q.value);
-    items.forEach(li => {
-      const hit = norm(li.textContent).includes(kw);
-      li.style.display = hit ? "" : "none";
+    items.forEach(li => li.style.display =
+      norm(li.textContent).includes(kw) ? "" : "none");
+  });
+}
+
+/* ========= 切替スイッチ ========= */
+function bindToggles(){
+  document.querySelectorAll(".toggle[data-bind]").forEach(el => {
+    const key = el.dataset.bind;
+    const on = !!Store.get(key);
+    el.classList.toggle("on", on);
+    el.setAttribute("aria-pressed", String(on));
+    el.addEventListener("click", () => {
+      const now = el.classList.toggle("on");
+      el.setAttribute("aria-pressed", String(now));
+      Store.set(key, now);
+      if(key === "darkmode") document.body.classList.toggle("theme-dark", now);
+      if(key === "cap") document.getElementById("capPanel")?.toggleAttribute("hidden", !now);
     });
   });
 }
 
-// 画面系: 輝度・ダークモード・壁紙ボタン
+/* ========= 画面（Display） ========= */
 function bindDisplay(){
   const r = document.getElementById("brightRange");
   const label = document.getElementById("brightVal");
   if(r && label){
     r.value = Store.get("brightness");
     label.textContent = r.value;
-    r.addEventListener("input", () => {
-      label.textContent = r.value;
-    });
-    r.addEventListener("change", () => {
-      Store.set("brightness", Number(r.value));
-    });
+    r.addEventListener("input", () => label.textContent = r.value);
+    r.addEventListener("change", () => Store.set("brightness", Number(r.value)));
   }
-
-  // ダークモード初期反映
-  document.body.classList.toggle("theme-dark", !!Store.get("darkmode"));
-
-  // 壁紙
+  const autolock = document.getElementById("autolock");
+  if(autolock){
+    autolock.value = Store.get("autolock");
+    autolock.addEventListener("change", () => Store.set("autolock", autolock.value));
+  }
   document.getElementById("btnWallpaper")?.addEventListener("click", () => {
     alert("壁紙選択ダイアログ（モック）");
   });
-
-  // 自動ロック: 保存だけ
-  const autolock = document.getElementById("autolock");
-  if(autolock){
-    autolock.addEventListener("change", () => {
-      Store.set("autolock", autolock.value);
-    });
-    if(Store.get("autolock")) autolock.value = Store.get("autolock");
-  }
 }
 
-// ストレージ: 単位切替（画像差し替え）
+/* ========= ストレージ ========= */
 function bindStorage(){
   const chart = document.getElementById("storageChart");
   const segBtns = document.querySelectorAll(".seg-btn[data-unit]");
@@ -126,7 +104,7 @@ function bindStorage(){
       chart.src = "storage usageGB.png";
       chart.alt = "ストレージ円グラフ（GB）";
     }else{
-      chart.src = "storage usageもどき.png";
+      chart.src = "storage usagePct.png";
       chart.alt = "ストレージ円グラフ（%）";
     }
     segBtns.forEach(b => {
@@ -136,57 +114,41 @@ function bindStorage(){
     });
     Store.set("unit", unit);
   }
-
-  segBtns.forEach(b => {
-    b.addEventListener("click", () => apply(b.dataset.unit));
-  });
-
+  segBtns.forEach(b => b.addEventListener("click", () => apply(b.dataset.unit)));
   apply(Store.get("unit") || "gb");
 }
 
-// モバイル通信: 上限・バー反映等
+/* ========= モバイル通信 ========= */
 function bindMobile(){
   const capPanel = document.getElementById("capPanel");
   const capInput = document.getElementById("capInput");
   const capNow = document.getElementById("capNow");
   const bar = document.getElementById("dataUsedBar");
 
-  // 初期: capの表示
-  const capOn = !!Store.get("cap");
-  capPanel?.toggleAttribute("hidden", !capOn);
+  capPanel?.toggleAttribute("hidden", !Store.get("cap"));
+  if(capInput){ capInput.value = Store.get("capValue") ?? 20; }
+  if(capNow){ capNow.textContent = Store.get("capValue") ?? 20; }
 
-  // cap値初期化
-  if(capInput){
-    capInput.value = Store.get("capValue") ?? 20;
-  }
-  if(capNow){
-    capNow.textContent = Store.get("capValue") ?? 20;
-  }
-
-  // 使用量バーの例: 11.8 / 20 → 59%
   if(bar){
-    // HTML側に初期幅があるが、cap変更後に再計算できるよう関数化
     const updateBar = () => {
-      const used = 11.8; // モックの固定値（必要ならStore化可能）
+      const used = 11.8; // モック固定
       const cap = Number(Store.get("capValue") ?? 20);
       const pct = Math.min(100, Math.round((used / cap) * 100));
       bar.style.width = pct + "%";
     };
-    updateBar();
-    // 外から呼べるように保存
-    window.__updateDataBar = updateBar;
+    updateBar(); window.__updateDataBar = updateBar;
   }
 }
+window.applyCap = function(){
+  const v = Number(document.getElementById("capInput").value);
+  if(isNaN(v) || v < 1 || v > 200){ alert("1〜200の範囲で入力してください"); return; }
+  Store.set("capValue", v);
+  document.getElementById("capNow").textContent = v;
+  window.__updateDataBar?.();
+  alert(`上限を ${v} GB に設定しました`);
+}
 
-// 位置情報（アプリ）
-window.toggleLocation = function(){
-  const next = !Store.get("locAllowed");
-  Store.set("locAllowed", next);
-  const el = document.getElementById("locState");
-  if(el) el.textContent = next ? "許可" : "拒否";
-};
-
-// APN
+/* ========= APN & 位置情報 ========= */
 window.setAPN = function(name){
   Store.set("apn", name);
   document.getElementById("apnCurrent").textContent = name;
@@ -196,79 +158,41 @@ window.addAPN = function(){
   const name = document.getElementById("apnName")?.value?.trim();
   const apn  = document.getElementById("apnValue")?.value?.trim();
   if(!name || !apn){ alert("名称とAPNを入力してください"); return; }
-  // 実装簡略化：選択中にする
   setAPN(apn);
   document.getElementById("apnName").value = "";
   document.getElementById("apnValue").value = "";
 };
-
-// データ上限の適用
-window.applyCap = function(){
-  const v = Number(document.getElementById("capInput").value);
-  if(isNaN(v) || v < 1 || v > 200){
-    alert("1〜200の範囲で入力してください");
-    return;
-  }
-  Store.set("capValue", v);
-  document.getElementById("capNow").textContent = v;
-  window.__updateDataBar?.();
-  alert(`上限を ${v} GB に設定しました`);
+window.toggleLocation = function(){
+  const next = !Store.get("locAllowed");
+  Store.set("locAllowed", next);
+  const el = document.getElementById("locState");
+  if(el) el.textContent = next ? "許可" : "拒否";
 };
 
-// 初期化
-document.addEventListener("DOMContentLoaded", () => {
-  bindMenu();
-  bindSearch();
-  bindToggles();
-  bindDisplay();
-  bindStorage();
-  bindMobile();
-
-  // ページ直接リンク（hash）の戻り/進む対応
-  window.addEventListener("popstate", () => {
-    const name = location.hash.replace("#","");
-    if(name){
-      show(name);
-      // 左メニューの見た目も更新
-      document.querySelectorAll("#menu li").forEach(li => {
-        li.classList.toggle("active", li.dataset.page === name);
-      });
-    }
-  });
-});
-// ---- アプリのモックデータ ----
+/* ========= アプリデータ（IIFE） ========= */
 const Apps = (() => {
   const data = [
-    {
-      id: "line", name: "LINE", system: false, icon: "icons/line.png",
-      permissions: { camera:true, mic:true, location:true, notifications:true },
-      revoked: false,
-      screentime: { todayMin: 35, weekMin: 240 } // 直近7日合計
-    },
-    {
-      id: "youtube", name: "YouTube", system:false, icon:"icons/youtube.png",
-      permissions: { camera:false, mic:true, location:false, notifications:true },
-      revoked:false,
-      screentime:{ todayMin: 52, weekMin: 380 }
-    },
-    {
-      id: "camera", name: "カメラ", system:true, icon:"icons/camera.png",
-      permissions: { camera:true, mic:true, location:true, notifications:false },
-      revoked:false,
-      screentime:{ todayMin: 5, weekMin: 40 }
-    },
-    {
-      id: "settings", name:"設定", system:true, icon:"icons/settings.png",
+    { id:"line", name:"LINE", system:false,
+      permissions:{ camera:true, mic:true, location:true, notifications:true },
+      screentime:{ todayMin:35, weekMin:240 } },
+    { id:"youtube", name:"YouTube", system:false,
+      permissions:{ camera:false, mic:true, location:false, notifications:true },
+      screentime:{ todayMin:52, weekMin:380 } },
+    { id:"camera", name:"カメラ", system:true,
+      permissions:{ camera:true, mic:true, location:true, notifications:false },
+      screentime:{ todayMin:5, weekMin:40 } },
+    { id:"settings", name:"設定", system:true,
       permissions:{ camera:false, mic:false, location:false, notifications:false },
-      revoked:false,
-      screentime:{ todayMin: 2, weekMin: 15 }
-    }
+      screentime:{ todayMin:2, weekMin:15 } }
   ];
-  const byId = id => data.find(x => x.id === id);
-  return { all:() => data, byId };
-})();
+  return {
+    all: () => data,
+    byId: id => data.find(x => x.id === id),
+    addMany: items => { data.push(...items); }
+  };
+})(); // ← IIFE終了（この外側で追加する）
 
-// ---- 一覧描画 ----
+/* ========= アプリ一覧/詳細 関数 ========= */
 function renderAppList(){
   const listEl = document.getElementById("appList");
   const showSys = document.getElementById("showSystem")?.checked;
@@ -277,29 +201,22 @@ function renderAppList(){
   const apps = Apps.all().filter(a => (showSys || !a.system))
     .filter(a => a.name.toLowerCase().includes(q));
 
-  // 集計
   const sumEl = document.getElementById("appSummary");
   if(sumEl){
     const total = apps.length;
     const sys = apps.filter(a => a.system).length;
-    sumEl.innerHTML = `
-      <div><strong>${total}</strong> 件表示（システム: ${sys}）</div>
-      <div class="help">クリックで詳細へ。剥奪/付与、スクリーンタイム確認ができます。</div>
-    `;
+    sumEl.innerHTML = `<div><strong>${total}</strong> 件表示（システム: ${sys}）</div>
+      <div class="help">クリックで詳細へ。剥奪/付与、スクリーンタイム確認ができます。</div>`;
   }
 
-  // 一覧
   listEl.innerHTML = "";
   apps.forEach(a => {
     const row = document.createElement("div");
     row.className = "row app-row";
-    row.tabIndex = 0;
-    row.addEventListener("click", () => openAppDetail(a.id));
-    row.addEventListener("keypress", (e) => { if(e.key === "Enter") openAppDetail(a.id); });
-
+    row.dataset.id = a.id;
     row.innerHTML = `
       <div style="display:flex;align-items:center;gap:12px">
-        <div class="app-icon" aria-hidden="true">${(a.name[0] || "?")}</div>
+        <div class="app-icon" aria-hidden="true">${(a.name[0]||"?")}</div>
         <div>
           <div>${a.name}${a.system ? ' <span class="badge">システム</span>' : ""}</div>
           <div class="help">本日 ${a.screentime.todayMin} 分・直近7日 ${a.screentime.weekMin} 分</div>
@@ -310,198 +227,149 @@ function renderAppList(){
     listEl.appendChild(row);
   });
 }
-
-// ---- 詳細描画 ----
-function openAppDetail(id){
-  const a = Apps.byId(id); if(!a) return;
-  // タイトル・メタ
-  document.getElementById("appTitle").textContent = a.name;
-  document.getElementById("appMeta").innerHTML = `
-    <div class="grid">
-      <div><strong>ID</strong><div class="help">${a.id}</div></div>
-      <div><strong>種別</strong><div class="help">${a.system ? "システム" : "ユーザー"}</div></div>
-    </div>
-  `;
-
-  // 権限一覧
-  const perms = a.permissions;
-  const toBadge = (k, v) => `<span class="badge" style="margin-right:6px">${k}:${v ? "許可" : "拒否"}</span>`;
-  document.getElementById("appPermissions").innerHTML =
-    Object.keys(perms).map(k => toBadge(k, perms[k])).join("");
-
-  // スクリーンタイム
-  document.getElementById("stToday").textContent = `${a.screentime.todayMin}分`;
-  // 週バーの幅は、便宜上 “1日120分想定×7=840分” 比で可視化
-  const pct = Math.min(100, Math.round(a.screentime.weekMin / 840 * 100));
-  document.getElementById("stWeekBar").style.width = pct + "%";
-  document.getElementById("stWeekNote").textContent =
-    `直近7日: ${a.screentime.weekMin}分（目安比 ${pct}%）`;
-
-  // 剥奪/付与
-  const btnRevoke = document.getElementById("btnRevoke");
-  const btnGrant  = document.getElementById("btnGrant");
-  btnRevoke.onclick = () => {
-    Object.keys(perms).forEach(k => perms[k] = false);
-    openAppDetail(id);
-    alert("すべての権限を剥奪しました（モック）");
-  };
-  btnGrant.onclick = () => {
-    Object.keys(perms).forEach(k => perms[k] = true);
-    openAppDetail(id);
-    alert("すべての権限を付与しました（モック）");
-  };
-
-  // アンインストール
-  const uninstallRow = document.getElementById("uninstallRow");
-  const btnUninstall = document.getElementById("btnUninstall");
-  if(a.system){
-    uninstallRow.style.opacity = .5;
-    btnUninstall.disabled = true;
-    btnUninstall.title = "システムアプリはアンインストール不可";
-  }else{
-    uninstallRow.style.opacity = 1;
-    btnUninstall.disabled = false;
-    btnUninstall.title = "";
-    btnUninstall.onclick = () => alert(`${a.name} をアンインストールします（モック）`);
-  }
-
-  show("app-detail");
-  history.replaceState(null, "", `#app-${id}`);
-}
-
-// ---- バインド（一覧のイベント） ----
 function bindAppsPage(){
+  const list = document.getElementById("appList");
   const s = document.getElementById("appSearch");
   const c = document.getElementById("showSystem");
-  if(s){ s.addEventListener("input", renderAppList); }
-  if(c){ c.addEventListener("change", renderAppList); }
+  const debounce = (fn, d=160) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), d); }; };
+  if(s) s.addEventListener("input", debounce(renderAppList, 160));
+  if(c) c.addEventListener("change", renderAppList);
+  if(list && !list.__bound){
+    list.addEventListener("click", e => {
+      const row = e.target.closest(".app-row[data-id]");
+      if(row) openAppDetail(row.dataset.id);
+    });
+    list.__bound = true;
+  }
   renderAppList();
 }
+function openAppDetail(id){
+  try{
+    const a = Apps.byId(id);
+    if(!a){ alert(`アプリが見つかりません: ${id}`); return; }
 
-// 既存DOMContentLoaded末尾に追加
+    document.getElementById("appTitle").textContent = a.name;
+    document.getElementById("appMeta").innerHTML = `
+      <div class="grid">
+        <div><strong>ID</strong><div class="help">${a.id}</div></div>
+        <div><strong>種別</strong><div class="help">${a.system ? "システム" : "ユーザー"}</div></div>
+      </div>`;
+
+    const perms = a.permissions || {};
+    const toBadge = (k,v)=>`<span class="badge" style="margin-right:6px">${k}:${v?"許可":"拒否"}</span>`;
+    document.getElementById("appPermissions").innerHTML =
+      Object.keys(perms).map(k=>toBadge(k,perms[k])).join("") || "<div class='help'>権限情報なし</div>";
+
+    const today = a.screentime?.todayMin ?? 0;
+    const week  = a.screentime?.weekMin  ?? 0;
+    document.getElementById("stToday").textContent = `${today}分`;
+    const pct = Math.min(100, Math.round(week / 840 * 100));
+    document.getElementById("stWeekBar").style.width = pct + "%";
+    document.getElementById("stWeekNote").textContent = `直近7日: ${week}分（目安比 ${pct}%）`;
+
+    const btnRevoke = document.getElementById("btnRevoke");
+    const btnGrant  = document.getElementById("btnGrant");
+    btnRevoke.onclick = () => { Object.keys(perms).forEach(k => perms[k] = false); openAppDetail(id); alert("すべての権限を剥奪しました（モック）"); };
+    btnGrant.onclick  = () => { Object.keys(perms).forEach(k => perms[k] = true ); openAppDetail(id); alert("すべての権限を付与しました（モック）"); };
+
+    const uninstallRow = document.getElementById("uninstallRow");
+    const btnUninstall = document.getElementById("btnUninstall");
+    if(a.system){
+      uninstallRow.style.opacity = .5;
+      btnUninstall.disabled = true;
+      btnUninstall.title = "システムアプリはアンインストール不可";
+    }else{
+      uninstallRow.style.opacity = 1;
+      btnUninstall.disabled = false;
+      btnUninstall.title = "";
+      btnUninstall.onclick = () => alert(`${a.name} をアンインストールします（モック）`);
+    }
+
+    show("app-detail"); highlight("apps");
+    history.pushState(null, "", `#app-${id}`);
+    document.getElementById("appTitle")?.focus();
+  }catch(err){
+    console.error(err);
+    alert("詳細の描画中にエラーが発生しました（コンソールを確認）");
+  }
+}
+
+/* ========= 追加アプリ（IIFEの外で） ========= */
+Apps.addMany([
+  { id:"maps", name:"地図", system:false,
+    permissions:{ camera:false, mic:false, location:true, notifications:true },
+    screentime:{ todayMin:12, weekMin:90 } },
+  { id:"browser", name:"ブラウザ", system:false,
+    permissions:{ camera:true, mic:true, location:true, notifications:true },
+    screentime:{ todayMin:25, weekMin:210 } },
+  { id:"photos", name:"フォト", system:false,
+    permissions:{ camera:false, mic:false, location:false, notifications:true },
+    screentime:{ todayMin:8, weekMin:55 } },
+  { id:"mail", name:"メール", system:false,
+    permissions:{ camera:false, mic:false, location:false, notifications:true },
+    screentime:{ todayMin:5, weekMin:48 } },
+  { id:"music", name:"ミュージック", system:false,
+    permissions:{ camera:false, mic:false, location:false, notifications:true },
+    screentime:{ todayMin:18, weekMin:160 } },
+  { id:"clock", name:"時計", system:false,
+    permissions:{ camera:false, mic:false, location:false, notifications:true },
+    screentime:{ todayMin:1, weekMin:12 } },
+  { id:"calendar", name:"カレンダー", system:false,
+    permissions:{ camera:false, mic:false, location:false, notifications:true },
+    screentime:{ todayMin:2, weekMin:30 } },
+  { id:"files", name:"ファイル", system:false,
+    permissions:{ camera:false, mic:false, location:false, notifications:false },
+    screentime:{ todayMin:3, weekMin:26 } },
+  { id:"notes", name:"メモ", system:false,
+    permissions:{ camera:false, mic:false, location:false, notifications:true },
+    screentime:{ todayMin:4, weekMin:40 } },
+  { id:"weather", name:"天気", system:false,
+    permissions:{ camera:false, mic:false, location:true, notifications:true },
+    screentime:{ todayMin:2, weekMin:20 } },
+  { id:"recorder", name:"レコーダー", system:false,
+    permissions:{ camera:false, mic:true, location:false, notifications:false },
+    screentime:{ todayMin:1, weekMin:10 } },
+  { id:"calc", name:"電卓", system:false,
+    permissions:{ camera:false, mic:false, location:false, notifications:false },
+    screentime:{ todayMin:1, weekMin:7 } },
+  // システム系（「システムアプリを表示」にチェックで見える）
+  { id:"phone", name:"電話", system:true,
+    permissions:{ camera:false, mic:true, location:false, notifications:true },
+    screentime:{ todayMin:3, weekMin:24 } },
+  { id:"sms", name:"メッセージ", system:true,
+    permissions:{ camera:false, mic:false, location:false, notifications:true },
+    screentime:{ todayMin:2, weekMin:18 } },
+  { id:"contacts", name:"連絡先", system:true,
+    permissions:{ camera:false, mic:false, location:false, notifications:false },
+    screentime:{ todayMin:1, weekMin:9 } },
+  { id:"ime", name:"日本語入力（IME）", system:true,
+    permissions:{ camera:false, mic:false, location:false, notifications:false },
+    screentime:{ todayMin:1, weekMin:5 } },
+  { id:"systemui", name:"システムUI", system:true,
+    permissions:{ camera:false, mic:false, location:false, notifications:false },
+    screentime:{ todayMin:0, weekMin:0 } },
+  { id:"download", name:"ダウンロードマネージャー", system:true,
+    permissions:{ camera:false, mic:false, location:false, notifications:false },
+    screentime:{ todayMin:0, weekMin:3 } },
+  { id:"carrier", name:"キャリアサービス", system:true,
+    permissions:{ camera:false, mic:false, location:false, notifications:false },
+    screentime:{ todayMin:0, weekMin:2 } }
+]);
+
+// 追加直後に一覧を再描画（初期化前でもOK）
+if (typeof renderAppList === "function") renderAppList();
+
+/* ========= 初期化 ========= */
 document.addEventListener("DOMContentLoaded", () => {
-  // appsページ初期化
-  bindAppsPage();
+  bindMenu(); bindSearch(); bindToggles(); bindDisplay(); bindStorage();
+  bindMobile(); bindAppsPage();
+  window.addEventListener("popstate", routeFromHash);
 
-  // 直接ハッシュ遷移（例: #app-line）
-  const m = location.hash.match(/^#app-(.+)$/);
-  if(m && Apps.byId(m[1])) openAppDetail(m[1]);
+  // Escで一覧に戻る（詳細表示時のみ）
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.querySelector('[data-page="app-detail"]').hidden) {
+      show("apps"); highlight("apps"); history.pushState(null, "", "#apps");
+    }
+  });
+  routeFromHash();
 });
-// 既存の popstate を置き換え or 追記
-window.addEventListener("popstate", () => {
-  const h = location.hash || "";
-  const m = h.match(/^#app-(.+)$/);
-  if (m && Apps.byId(m[1])) { 
-    openAppDetail(m[1]);
-    return;
-  }
-  const name = h.replace("#","") || "internet";
-  show(name);
-  document.querySelectorAll("#menu li")
-    .forEach(li => li.classList.toggle("active", li.dataset.page === name));
-});
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !document.querySelector('[data-page="app-detail"]').hidden) {
-    show("apps");
-    highlight("apps");
-    history.pushState(null, "", "#apps");
-  }
-});
-const debounce = (fn, d=160) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), d); }; };
-if (s) s.addEventListener("input", debounce(renderAppList, 160));
-// ---- 追加アプリ（コピペでOK）------------------------------------------
-(function addMoreApps(){
-  const add = (...xs) => Apps.all().push(...xs);
-
-  add(
-    // ユーザー向け定番
-    { id:"maps", name:"地図", system:false,
-      permissions:{ camera:false, mic:false, location:true, notifications:true },
-      screentime:{ todayMin:12, weekMin:90 } },
-
-    { id:"browser", name:"ブラウザ", system:false,
-      permissions:{ camera:true, mic:true, location:true, notifications:true },
-      screentime:{ todayMin:25, weekMin:210 } },
-
-    { id:"photos", name:"フォト", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:true },
-      screentime:{ todayMin:8, weekMin:55 } },
-
-    { id:"mail", name:"メール", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:true },
-      screentime:{ todayMin:5, weekMin:48 } },
-
-    { id:"music", name:"ミュージック", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:true },
-      screentime:{ todayMin:18, weekMin:160 } },
-
-    { id:"clock", name:"時計", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:true },
-      screentime:{ todayMin:1, weekMin:12 } },
-
-    { id:"calendar", name:"カレンダー", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:true },
-      screentime:{ todayMin:2, weekMin:30 } },
-
-    { id:"files", name:"ファイル", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:false },
-      screentime:{ todayMin:3, weekMin:26 } },
-
-    { id:"notes", name:"メモ", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:true },
-      screentime:{ todayMin:4, weekMin:40 } },
-
-    { id:"weather", name:"天気", system:false,
-      permissions:{ camera:false, mic:false, location:true, notifications:true },
-      screentime:{ todayMin:2, weekMin:20 } },
-
-    { id:"recorder", name:"レコーダー", system:false,
-      permissions:{ camera:false, mic:true, location:false, notifications:false },
-      screentime:{ todayMin:1, weekMin:10 } },
-
-    { id:"calc", name:"電卓", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:false },
-      screentime:{ todayMin:1, weekMin:7 } },
-
-    // コミュニケーション＆娯楽（仮名）
-    { id:"sns", name:"Chatter（SNS）", system:false,
-      permissions:{ camera:true, mic:true, location:true, notifications:true },
-      screentime:{ todayMin:22, weekMin:180 } },
-
-    { id:"game", name:"ブロックラン（ゲーム）", system:false,
-      permissions:{ camera:false, mic:false, location:false, notifications:false },
-      screentime:{ todayMin:14, weekMin:120 } },
-
-    // システム（表示オプションでのみ見せる）
-    { id:"phone", name:"電話", system:true,
-      permissions:{ camera:false, mic:true, location:false, notifications:true },
-      screentime:{ todayMin:3, weekMin:24 } },
-
-    { id:"sms", name:"メッセージ", system:true,
-      permissions:{ camera:false, mic:false, location:false, notifications:true },
-      screentime:{ todayMin:2, weekMin:18 } },
-
-    { id:"contacts", name:"連絡先", system:true,
-      permissions:{ camera:false, mic:false, location:false, notifications:false },
-      screentime:{ todayMin:1, weekMin:9 } },
-
-    { id:"ime", name:"日本語入力（IME）", system:true,
-      permissions:{ camera:false, mic:false, location:false, notifications:false },
-      screentime:{ todayMin:1, weekMin:5 } },
-
-    { id:"systemui", name:"システムUI", system:true,
-      permissions:{ camera:false, mic:false, location:false, notifications:false },
-      screentime:{ todayMin:0, weekMin:0 } },
-
-    { id:"download", name:"ダウンロードマネージャー", system:true,
-      permissions:{ camera:false, mic:false, location:false, notifications:false },
-      screentime:{ todayMin:0, weekMin:3 } },
-
-    { id:"carrier", name:"キャリアサービス", system:true,
-      permissions:{ camera:false, mic:false, location:false, notifications:false },
-      screentime:{ todayMin:0, weekMin:2 } }
-  );
-
-  // 画面を再描画（まだ初期化前でも安全）
-  if (typeof renderAppList === "function") renderAppList();
-})();

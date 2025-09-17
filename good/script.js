@@ -236,3 +236,154 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+// ---- アプリのモックデータ ----
+const Apps = (() => {
+  const data = [
+    {
+      id: "line", name: "LINE", system: false, icon: "icons/line.png",
+      permissions: { camera:true, mic:true, location:true, notifications:true },
+      revoked: false,
+      screentime: { todayMin: 35, weekMin: 240 } // 直近7日合計
+    },
+    {
+      id: "youtube", name: "YouTube", system:false, icon:"icons/youtube.png",
+      permissions: { camera:false, mic:true, location:false, notifications:true },
+      revoked:false,
+      screentime:{ todayMin: 52, weekMin: 380 }
+    },
+    {
+      id: "camera", name: "カメラ", system:true, icon:"icons/camera.png",
+      permissions: { camera:true, mic:true, location:true, notifications:false },
+      revoked:false,
+      screentime:{ todayMin: 5, weekMin: 40 }
+    },
+    {
+      id: "settings", name:"設定", system:true, icon:"icons/settings.png",
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      revoked:false,
+      screentime:{ todayMin: 2, weekMin: 15 }
+    }
+  ];
+  const byId = id => data.find(x => x.id === id);
+  return { all:() => data, byId };
+})();
+
+// ---- 一覧描画 ----
+function renderAppList(){
+  const listEl = document.getElementById("appList");
+  const showSys = document.getElementById("showSystem")?.checked;
+  const q = (document.getElementById("appSearch")?.value || "").trim().toLowerCase();
+
+  const apps = Apps.all().filter(a => (showSys || !a.system))
+    .filter(a => a.name.toLowerCase().includes(q));
+
+  // 集計
+  const sumEl = document.getElementById("appSummary");
+  if(sumEl){
+    const total = apps.length;
+    const sys = apps.filter(a => a.system).length;
+    sumEl.innerHTML = `
+      <div><strong>${total}</strong> 件表示（システム: ${sys}）</div>
+      <div class="help">クリックで詳細へ。剥奪/付与、スクリーンタイム確認ができます。</div>
+    `;
+  }
+
+  // 一覧
+  listEl.innerHTML = "";
+  apps.forEach(a => {
+    const row = document.createElement("div");
+    row.className = "row app-row";
+    row.tabIndex = 0;
+    row.addEventListener("click", () => openAppDetail(a.id));
+    row.addEventListener("keypress", (e) => { if(e.key === "Enter") openAppDetail(a.id); });
+
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="app-icon" aria-hidden="true">${(a.name[0] || "?")}</div>
+        <div>
+          <div>${a.name}${a.system ? ' <span class="badge">システム</span>' : ""}</div>
+          <div class="help">本日 ${a.screentime.todayMin} 分・直近7日 ${a.screentime.weekMin} 分</div>
+        </div>
+      </div>
+      <div class="link">詳細</div>
+    `;
+    listEl.appendChild(row);
+  });
+}
+
+// ---- 詳細描画 ----
+function openAppDetail(id){
+  const a = Apps.byId(id); if(!a) return;
+  // タイトル・メタ
+  document.getElementById("appTitle").textContent = a.name;
+  document.getElementById("appMeta").innerHTML = `
+    <div class="grid">
+      <div><strong>ID</strong><div class="help">${a.id}</div></div>
+      <div><strong>種別</strong><div class="help">${a.system ? "システム" : "ユーザー"}</div></div>
+    </div>
+  `;
+
+  // 権限一覧
+  const perms = a.permissions;
+  const toBadge = (k, v) => `<span class="badge" style="margin-right:6px">${k}:${v ? "許可" : "拒否"}</span>`;
+  document.getElementById("appPermissions").innerHTML =
+    Object.keys(perms).map(k => toBadge(k, perms[k])).join("");
+
+  // スクリーンタイム
+  document.getElementById("stToday").textContent = `${a.screentime.todayMin}分`;
+  // 週バーの幅は、便宜上 “1日120分想定×7=840分” 比で可視化
+  const pct = Math.min(100, Math.round(a.screentime.weekMin / 840 * 100));
+  document.getElementById("stWeekBar").style.width = pct + "%";
+  document.getElementById("stWeekNote").textContent =
+    `直近7日: ${a.screentime.weekMin}分（目安比 ${pct}%）`;
+
+  // 剥奪/付与
+  const btnRevoke = document.getElementById("btnRevoke");
+  const btnGrant  = document.getElementById("btnGrant");
+  btnRevoke.onclick = () => {
+    Object.keys(perms).forEach(k => perms[k] = false);
+    openAppDetail(id);
+    alert("すべての権限を剥奪しました（モック）");
+  };
+  btnGrant.onclick = () => {
+    Object.keys(perms).forEach(k => perms[k] = true);
+    openAppDetail(id);
+    alert("すべての権限を付与しました（モック）");
+  };
+
+  // アンインストール
+  const uninstallRow = document.getElementById("uninstallRow");
+  const btnUninstall = document.getElementById("btnUninstall");
+  if(a.system){
+    uninstallRow.style.opacity = .5;
+    btnUninstall.disabled = true;
+    btnUninstall.title = "システムアプリはアンインストール不可";
+  }else{
+    uninstallRow.style.opacity = 1;
+    btnUninstall.disabled = false;
+    btnUninstall.title = "";
+    btnUninstall.onclick = () => alert(`${a.name} をアンインストールします（モック）`);
+  }
+
+  show("app-detail");
+  history.replaceState(null, "", `#app-${id}`);
+}
+
+// ---- バインド（一覧のイベント） ----
+function bindAppsPage(){
+  const s = document.getElementById("appSearch");
+  const c = document.getElementById("showSystem");
+  if(s){ s.addEventListener("input", renderAppList); }
+  if(c){ c.addEventListener("change", renderAppList); }
+  renderAppList();
+}
+
+// 既存DOMContentLoaded末尾に追加
+document.addEventListener("DOMContentLoaded", () => {
+  // appsページ初期化
+  bindAppsPage();
+
+  // 直接ハッシュ遷移（例: #app-line）
+  const m = location.hash.match(/^#app-(.+)$/);
+  if(m && Apps.byId(m[1])) openAppDetail(m[1]);
+});

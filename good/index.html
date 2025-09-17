@@ -46,6 +46,11 @@ section[data-page="display"] input[type="range"]{
 .theme-dark{
   --bg:#111418; --fg:#e7e9ed; --card:#171a1f; --line:#2a2f36;
 }
+.toggle[role="switch"]{ cursor:pointer; }
+.toggle:focus-visible{ outline:2px solid #9cc7ff; outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){
+  .toggle, .toggle::after{ transition: none; }
+}
 
 </style>
 </head>

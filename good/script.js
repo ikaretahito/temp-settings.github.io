@@ -5,11 +5,9 @@ const Store = (() => {
     airplane:false, wifi:true, saver:false, bt:true, nearby:false,
     nfc:false, nfc_unlock:false, cap:false, tether:false, notifyData:true,
     autoBrightness:true, darkmode:false, unit:"gb", capValue:20, apn:"carrier.example.jp",
-    locAllowed:true, brightness:60, autolock:"1m"lang: "ja",
-ime: "jp",
-tz: "Asia/Tokyo",
-autoTime: true
-
+    locAllowed:true, brightness:60, autolock:"1m",
+    // ★ システム用 追加
+    lang:"ja", ime:"jp", tz:"Asia/Tokyo", autoTime:true
   };
   let state = { ...def, ...JSON.parse(localStorage.getItem(KEY) || "{}") };
   const save = () => localStorage.setItem(KEY, JSON.stringify(state));
@@ -38,12 +36,14 @@ function routeFromHash(){
 function bindMenu(){
   const menu = document.getElementById("menu");
   if(!menu) return;
-  // 初期
+  // 初期テーマ
   document.body.classList.toggle("theme-dark", !!Store.get("darkmode"));
+  // 初期ルート
   routeFromHash();
 
   menu.addEventListener("click", e => {
-    const li = e.target.closest("li[data-page]"); if(!li) return;
+    const li = e.target.closest("li[data-page]");
+    if(!li) return;
     const name = li.dataset.page;
     show(name); highlight(name);
     history.pushState(null, "", `#${name}`);
@@ -60,7 +60,7 @@ function bindSearch(){
   });
 }
 
-/* ========= 切替スイッチ ========= */
+/* ========= トグル ========= */
 function bindToggles(){
   document.querySelectorAll(".toggle[data-bind]").forEach(el => {
     const key = el.dataset.bind;
@@ -73,11 +73,12 @@ function bindToggles(){
       Store.set(key, now);
       if(key === "darkmode") document.body.classList.toggle("theme-dark", now);
       if(key === "cap") document.getElementById("capPanel")?.toggleAttribute("hidden", !now);
+      if(key === "autoTime") {/* モックなので保存のみ */}
     });
   });
 }
 
-/* ========= 画面（Display） ========= */
+/* ========= 画面 ========= */
 function bindDisplay(){
   const r = document.getElementById("brightRange");
   const label = document.getElementById("brightVal");
@@ -108,7 +109,7 @@ function bindStorage(){
       chart.src = "storage usageGB.png";
       chart.alt = "ストレージ円グラフ（GB）";
     }else{
-      chart.src = "storage usageもどき.png";
+      chart.src = "storage usageもどき.png"; // ← 指定通り
       chart.alt = "ストレージ円グラフ（%）";
     }
     segBtns.forEach(b => {
@@ -135,7 +136,7 @@ function bindMobile(){
 
   if(bar){
     const updateBar = () => {
-      const used = 11.8; // モック固定
+      const used = 11.8;
       const cap = Number(Store.get("capValue") ?? 20);
       const pct = Math.min(100, Math.round((used / cap) * 100));
       bar.style.width = pct + "%";
@@ -150,9 +151,9 @@ window.applyCap = function(){
   document.getElementById("capNow").textContent = v;
   window.__updateDataBar?.();
   alert(`上限を ${v} GB に設定しました`);
-}
+};
 
-/* ========= APN & 位置情報 ========= */
+/* ========= APN / 位置情報 ========= */
 window.setAPN = function(name){
   Store.set("apn", name);
   document.getElementById("apnCurrent").textContent = name;
@@ -173,7 +174,7 @@ window.toggleLocation = function(){
   if(el) el.textContent = next ? "許可" : "拒否";
 };
 
-/* ========= アプリデータ（IIFE） ========= */
+/* ========= アプリデータ ========= */
 const Apps = (() => {
   const data = [
     { id:"line", name:"LINE", system:false,
@@ -194,11 +195,12 @@ const Apps = (() => {
     byId: id => data.find(x => x.id === id),
     addMany: items => { data.push(...items); }
   };
-})(); // ← IIFE終了（この外側で追加する）
+})();
 
-/* ========= アプリ一覧/詳細 関数 ========= */
+/* ========= アプリ一覧/詳細 ========= */
 function renderAppList(){
   const listEl = document.getElementById("appList");
+  if(!listEl) return;
   const showSys = document.getElementById("showSystem")?.checked;
   const q = (document.getElementById("appSearch")?.value || "").trim().toLowerCase();
 
@@ -218,6 +220,7 @@ function renderAppList(){
     const row = document.createElement("div");
     row.className = "row app-row";
     row.dataset.id = a.id;
+    row.tabIndex = 0;
     row.innerHTML = `
       <div style="display:flex;align-items:center;gap:12px">
         <div class="app-icon" aria-hidden="true">${(a.name[0]||"?")}</div>
@@ -242,6 +245,12 @@ function bindAppsPage(){
     list.addEventListener("click", e => {
       const row = e.target.closest(".app-row[data-id]");
       if(row) openAppDetail(row.dataset.id);
+    });
+    list.addEventListener("keypress", e => {
+      if (e.key === "Enter") {
+        const row = e.target.closest(".app-row[data-id]");
+        if(row) openAppDetail(row.dataset.id);
+      }
     });
     list.__bound = true;
   }
@@ -271,11 +280,6 @@ function openAppDetail(id){
     document.getElementById("stWeekBar").style.width = pct + "%";
     document.getElementById("stWeekNote").textContent = `直近7日: ${week}分（目安比 ${pct}%）`;
 
-    const btnRevoke = document.getElementById("btnRevoke");
-    const btnGrant  = document.getElementById("btnGrant");
-    btnRevoke.onclick = () => { Object.keys(perms).forEach(k => perms[k] = false); openAppDetail(id); alert("すべての権限を剥奪しました（モック）"); };
-    btnGrant.onclick  = () => { Object.keys(perms).forEach(k => perms[k] = true ); openAppDetail(id); alert("すべての権限を付与しました（モック）"); };
-
     const uninstallRow = document.getElementById("uninstallRow");
     const btnUninstall = document.getElementById("btnUninstall");
     if(a.system){
@@ -298,78 +302,102 @@ function openAppDetail(id){
   }
 }
 
-/* ========= 追加アプリ（IIFEの外で） ========= */
-Apps.addMany([
-  { id:"maps", name:"地図", system:false,
-    permissions:{ camera:false, mic:false, location:true, notifications:true },
-    screentime:{ todayMin:12, weekMin:90 } },
-  { id:"browser", name:"ブラウザ", system:false,
-    permissions:{ camera:true, mic:true, location:true, notifications:true },
-    screentime:{ todayMin:25, weekMin:210 } },
-  { id:"photos", name:"フォト", system:false,
-    permissions:{ camera:false, mic:false, location:false, notifications:true },
-    screentime:{ todayMin:8, weekMin:55 } },
-  { id:"mail", name:"メール", system:false,
-    permissions:{ camera:false, mic:false, location:false, notifications:true },
-    screentime:{ todayMin:5, weekMin:48 } },
-  { id:"music", name:"ミュージック", system:false,
-    permissions:{ camera:false, mic:false, location:false, notifications:true },
-    screentime:{ todayMin:18, weekMin:160 } },
-  { id:"clock", name:"時計", system:false,
-    permissions:{ camera:false, mic:false, location:false, notifications:true },
-    screentime:{ todayMin:1, weekMin:12 } },
-  { id:"calendar", name:"カレンダー", system:false,
-    permissions:{ camera:false, mic:false, location:false, notifications:true },
-    screentime:{ todayMin:2, weekMin:30 } },
-  { id:"files", name:"ファイル", system:false,
-    permissions:{ camera:false, mic:false, location:false, notifications:false },
-    screentime:{ todayMin:3, weekMin:26 } },
-  { id:"notes", name:"メモ", system:false,
-    permissions:{ camera:false, mic:false, location:false, notifications:true },
-    screentime:{ todayMin:4, weekMin:40 } },
-  { id:"weather", name:"天気", system:false,
-    permissions:{ camera:false, mic:false, location:true, notifications:true },
-    screentime:{ todayMin:2, weekMin:20 } },
-  { id:"recorder", name:"レコーダー", system:false,
-    permissions:{ camera:false, mic:true, location:false, notifications:false },
-    screentime:{ todayMin:1, weekMin:10 } },
-  { id:"calc", name:"電卓", system:false,
-    permissions:{ camera:false, mic:false, location:false, notifications:false },
-    screentime:{ todayMin:1, weekMin:7 } },
-  // システム系（「システムアプリを表示」にチェックで見える）
-  { id:"phone", name:"電話", system:true,
-    permissions:{ camera:false, mic:true, location:false, notifications:true },
-    screentime:{ todayMin:3, weekMin:24 } },
-  { id:"sms", name:"メッセージ", system:true,
-    permissions:{ camera:false, mic:false, location:false, notifications:true },
-    screentime:{ todayMin:2, weekMin:18 } },
-  { id:"contacts", name:"連絡先", system:true,
-    permissions:{ camera:false, mic:false, location:false, notifications:false },
-    screentime:{ todayMin:1, weekMin:9 } },
-  { id:"ime", name:"日本語入力（IME）", system:true,
-    permissions:{ camera:false, mic:false, location:false, notifications:false },
-    screentime:{ todayMin:1, weekMin:5 } },
-  { id:"systemui", name:"システムUI", system:true,
-    permissions:{ camera:false, mic:false, location:false, notifications:false },
-    screentime:{ todayMin:0, weekMin:0 } },
-  { id:"download", name:"ダウンロードマネージャー", system:true,
-    permissions:{ camera:false, mic:false, location:false, notifications:false },
-    screentime:{ todayMin:0, weekMin:3 } },
-  { id:"carrier", name:"キャリアサービス", system:true,
-    permissions:{ camera:false, mic:false, location:false, notifications:false },
-    screentime:{ todayMin:0, weekMin:2 } }
-]);
+/* ========= システム ========= */
+function bindSystem(){
+  // 言語
+  const langSel = document.getElementById("lang");
+  if(langSel){
+    langSel.value = Store.get("lang") || "ja";
+    langSel.addEventListener("change", () => {
+      Store.set("lang", langSel.value);
+      document.documentElement.setAttribute("lang", langSel.value);
+      alert(`表示言語を ${langSel.options[langSel.selectedIndex].text} に設定しました（モック）`);
+    });
+    document.documentElement.setAttribute("lang", langSel.value);
+  }
+  // OSアップデート（モック）
+  const osStatus = document.getElementById("osStatus");
+  const btnUpdate = document.getElementById("btnUpdateCheck");
+  if(btnUpdate && osStatus){
+    btnUpdate.addEventListener("click", () => {
+      osStatus.textContent = "確認中…";
+      setTimeout(() => {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2,"0");
+        const mm = String(now.getMinutes()).padStart(2,"0");
+        osStatus.textContent = `最新の状態です（最終確認 ${hh}:${mm}）`;
+      }, 800);
+    });
+  }
+  // IME
+  const imeSel = document.getElementById("ime");
+  if(imeSel){
+    imeSel.value = Store.get("ime") || "jp";
+    imeSel.addEventListener("change", () => {
+      Store.set("ime", imeSel.value);
+      alert(`入力方法を変更しました（${imeSel.options[imeSel.selectedIndex].text} / モック）`);
+    });
+  }
+  // 時刻・日付
+  const tzSel = document.getElementById("tz");
+  const nowLabel = document.getElementById("nowTime");
+  if(tzSel) tzSel.value = Store.get("tz") || "Asia/Tokyo";
 
-// 追加直後に一覧を再描画（初期化前でもOK）
-if (typeof renderAppList === "function") renderAppList();
+  function tick(){
+    if(!nowLabel) return;
+    const tz = (tzSel?.value) || "Asia/Tokyo";
+    const fmt = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', weekday:'short'
+    });
+    nowLabel.textContent = fmt.format(new Date());
+  }
+  clearInterval(window.__clockTimer);
+  window.__clockTimer = setInterval(tick, 1000);
+  tick();
+  tzSel?.addEventListener("change", () => { Store.set("tz", tzSel.value); tick(); });
+
+  // NTP（モック）
+  const ntpInput = document.getElementById("ntpServer");
+  const btnNTP = document.getElementById("btnNTP");
+  btnNTP?.addEventListener("click", () => {
+    const server = ntpInput?.value?.trim() || "pool.ntp.org";
+    tick();
+    alert(`NTPサーバー ${server} と同期しました（モック）`);
+  });
+
+  // リセット群
+  const ask = (msg, fn) => { if(confirm(msg)) fn(); };
+  document.getElementById("btnResetNet")?.addEventListener("click", () => {
+    ask("ネットワーク設定をリセットしますか？（モック）", () => {
+      Store.set("wifi", true); Store.set("bt", true); Store.set("nearby", false);
+      alert("ネットワーク設定をリセットしました（モック）");
+    });
+  });
+  document.getElementById("btnResetAll")?.addEventListener("click", () => {
+    ask("すべての設定をリセットしますか？（データは保持 / モック）", () => {
+      const d = Store.def;
+      Object.keys(d).forEach(k => Store.set(k, d[k]));
+      document.body.classList.toggle("theme-dark", !!Store.get("darkmode"));
+      alert("すべての設定を既定値に戻しました（モック）");
+      tick();
+    });
+  });
+  document.getElementById("btnFactory")?.addEventListener("click", () => {
+    ask("工場出荷状態に初期化しますか？（モック）", () => {
+      localStorage.clear();
+      alert("初期化しました（モック）。ページを再読み込みしてください。");
+    });
+  });
+}
 
 /* ========= 初期化 ========= */
 document.addEventListener("DOMContentLoaded", () => {
   bindMenu(); bindSearch(); bindToggles(); bindDisplay(); bindStorage();
-  bindMobile(); bindAppsPage();bindSystem();
-  window.addEventListener("popstate", routeFromHash);
+  bindMobile(); bindAppsPage(); bindSystem();
 
-  // Escで一覧に戻る（詳細表示時のみ）
+  window.addEventListener("popstate", routeFromHash);
+  // Escで詳細→一覧へ（任意）
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !document.querySelector('[data-page="app-detail"]').hidden) {
       show("apps"); highlight("apps"); history.pushState(null, "", "#apps");
@@ -377,7 +405,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   routeFromHash();
 });
-lang: "ja",
-ime: "jp",
-tz: "Asia/Tokyo",
-autoTime: true

@@ -529,3 +529,72 @@ function bindAbout(){
   document.getElementById("legalClose")?.addEventListener("click", ()=> modal.hidden = true);
   modal?.addEventListener("click", (e)=>{ if(e.target === modal) modal.hidden = true; });
 }
+/* ====== 端末情報：安全なイベント委譲（開く／変更） ====== */
+// 1) モーダル開閉のユーティリティ（なければ定義、あれば既存を優先）
+window.openLegal = window.openLegal || function(kind){
+  const modal = document.getElementById("legalModal");
+  const title = document.getElementById("legalDocTitle");
+  const body  = document.getElementById("legalDocBody");
+  if (!modal || !title || !body) return;
+
+  const DOCS = {
+    regulatory:{ title:"Regulatory Notice", text:
+`本端末は各国/地域の無線規制に準拠しています（モック）。
+・技適/JATE 相当
+・FCC ID: 2ABCD-MOCK123（架空）
+・CE/UKCA 等（イメージ）`},
+    license:{ title:"Licenses (Open-source / Third-party)", text:
+`OSS/サードパーティのライセンス情報（モック）。
+・ExampleLib (MIT)
+・FooBar (Apache-2.0)
+・Baz UI (BSD-3)`},
+    warranty:{ title:"Warranty（保証）", text:
+`保証は購入日から1年（モック）。水没/改造/不適切使用は対象外。`},
+    rf:{ title:"RF Exposure（電波暴露）", text:
+`本端末は電波暴露ガイドラインに適合（モック）。
+最大SAR: 頭部0.70 / 身体0.85 W/kg（10g, 架空）`}
+  };
+  const d = DOCS[kind] || {title:"Document", text:""};
+  title.textContent = d.title;
+  body.textContent  = d.text;
+  modal.hidden = false;
+};
+window.closeLegal = window.closeLegal || function(){
+  const modal = document.getElementById("legalModal");
+  if (modal) modal.hidden = true;
+};
+
+// 2) ドキュメント全体でクリックを拾う（後からDOMが変わっても効く）
+document.addEventListener("click", (e) => {
+  const legalBtn = e.target.closest("button[data-legal]");
+  if (legalBtn) {
+    e.preventDefault();
+    openLegal(legalBtn.dataset.legal);
+    return;
+  }
+
+  if (e.target.closest("#legalClose")) {
+    e.preventDefault();
+    closeLegal();
+    return;
+  }
+
+  const renameBtn = e.target.closest("#btnRename");
+  if (renameBtn) {
+    e.preventDefault();
+    const nameEl = document.getElementById("deviceName");
+    const next = prompt("デバイス名を入力", nameEl?.textContent || "Yonyon Device");
+    if (next && next.trim()) {
+      if (nameEl) nameEl.textContent = next.trim();
+      alert("デバイス名を変更しました（モック）");
+    }
+  }
+});
+
+// 3) モーダルの外側クリック・Escで閉じる
+document.getElementById("legalModal")?.addEventListener("click", (e) => {
+  if (e.target.id === "legalModal") closeLegal();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeLegal();
+});

@@ -400,3 +400,12 @@ window.addEventListener("popstate", () => {
   document.querySelectorAll("#menu li")
     .forEach(li => li.classList.toggle("active", li.dataset.page === name));
 });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !document.querySelector('[data-page="app-detail"]').hidden) {
+    show("apps");
+    highlight("apps");
+    history.pushState(null, "", "#apps");
+  }
+});
+const debounce = (fn, d=160) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), d); }; };
+if (s) s.addEventListener("input", debounce(renderAppList, 160));

@@ -173,3 +173,5 @@ section[data-page="display"] input[type="range"]{
   font-weight:600;
 }
 .app-row{ cursor:pointer; }
+/* 時刻表示を等幅に（任意） */
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }

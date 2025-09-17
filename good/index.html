@@ -320,7 +320,74 @@
   </div>
 </section>
 
-  <section data-page="notifications" hidden><h2>通知</h2><div class="panel">通知の管理</div></section>
+  <!-- アプリ一覧（差し替え） -->
+<section data-page="apps" hidden>
+  <h2>アプリ</h2>
+
+  <!-- フィルタ行 -->
+  <div class="row">
+    <div class="grid" style="align-items:center">
+      <label><strong>検索</strong><br>
+        <input id="appSearch" placeholder="アプリ名でフィルタ" style="inline-size:220px">
+      </label>
+      <label style="justify-self:end">
+        <input id="showSystem" type="checkbox"> システムアプリを表示
+      </label>
+    </div>
+  </div>
+
+  <!-- 集計やヒント -->
+  <div class="panel" id="appSummary" aria-live="polite"></div>
+
+  <!-- 一覧本体 -->
+  <div id="appList"></div>
+</section>
+
+<!-- アプリ詳細（テンプレート） -->
+<section data-page="app-detail" hidden>
+  <h2 id="appTitle">アプリ詳細</h2>
+
+  <div class="row" onclick="show('apps')" style="cursor:pointer;margin-bottom:6px">
+    ← アプリ一覧に戻る
+  </div>
+
+  <div class="panel" id="appMeta"></div>
+
+  <div class="row">
+    <div>
+      <div>権限</div>
+      <div class="help">カメラ / マイク / 位置情報 / 通知</div>
+    </div>
+    <div>
+      <button class="badge" id="btnRevoke">剥奪</button>
+      <button class="badge" id="btnGrant">付与</button>
+    </div>
+  </div>
+
+  <div class="panel" id="appPermissions"></div>
+
+  <div class="row">
+    <div>
+      <div>スクリーンタイム（本日）</div>
+      <div class="help">1日あたりの利用時間</div>
+    </div>
+    <div id="stToday" style="min-inline-size:5em;text-align:right">0分</div>
+  </div>
+
+  <div class="panel">
+    <strong>直近7日</strong>
+    <div class="progress" aria-label="直近7日の利用割合">
+      <span id="stWeekBar" style="width:0%"></span>
+    </div>
+    <div class="note" id="stWeekNote" style="margin-top:6px"></div>
+  </div>
+
+  <div class="row" id="uninstallRow">
+    <div>アンインストール</div>
+    <button class="badge" id="btnUninstall">実行</button>
+  </div>
+</section>
+
   <section data-page="storage" hidden>
   <h2>ストレージ</h2>
 

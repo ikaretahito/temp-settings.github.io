@@ -175,3 +175,8 @@ section[data-page="display"] input[type="range"]{
 .app-row{ cursor:pointer; }
 /* 時刻表示を等幅に（任意） */
 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+/* 簡易モーダル */
+.modal{ position:fixed; inset:0; background:rgba(0,0,0,.35); display:grid; place-items:center; z-index:50; }
+.modal__dialog{ background:var(--card); border:1px solid var(--line); border-radius:14px; width:min(720px,90vw); max-height:80vh; display:flex; flex-direction:column; }
+.modal__head{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line); }
+.modal__body{ padding:16px; overflow:auto; }

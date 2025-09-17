@@ -424,7 +424,7 @@ function bindSystem(){
 /* ========= 初期化 ========= */
 document.addEventListener("DOMContentLoaded", () => {
   bindMenu(); bindSearch(); bindToggles(); bindDisplay(); bindStorage();
-  bindMobile(); bindAppsPage(); bindSystem();
+  bindMobile(); bindAppsPage(); bindSystem();startUptimeTimer();
 
   window.addEventListener("popstate", routeFromHash);
   // Escで詳細→一覧へ（任意）
@@ -458,13 +458,37 @@ function bindAbout(){
     }, 1000);
   }
 
-  // 起動時間（秒インクリメント）
-  const up = document.getElementById("uptime");
-  if(up){
-    let t = 0;
-    clearInterval(window.__upTimer);
-    window.__upTimer = setInterval(() => { t++; up.textContent = t + "秒"; }, 1000);
-  }
+ /* ==== 起動時間（2時間13分スタート、毎秒更新） ==== */
+// 2時間13分 = 2*3600 + 13*60 = 7,980 秒
+const UPTIME_START_SEC = 2 * 3600 + 13 * 60;
+// 「今この瞬間に開いたとしても 2:13:00 経過している」ように見せるため、
+// 壁時計から逆算した開始時刻を作る
+let __uptimeEpochMs = Date.now() - UPTIME_START_SEC * 1000;
+
+function startUptimeTimer(){
+  const el = document.getElementById("uptime");
+  if(!el) return;
+
+  const fmt = (sec) => {
+    const d = Math.floor(sec / 86400); sec %= 86400;
+    const h = Math.floor(sec / 3600);  sec %= 3600;
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    if (d > 0) return `${d}日${h}時間${m}分${s}秒`;
+    if (h > 0) return `${h}時間${m}分${s}秒`;
+    if (m > 0) return `${m}分${s}秒`;
+    return `${s}秒`;
+  };
+
+  const tick = () => {
+    const sec = Math.max(0, Math.floor((Date.now() - __uptimeEpochMs) / 1000));
+    el.textContent = fmt(sec);
+  };
+
+  clearInterval(window.__uptimeTimer);
+  window.__uptimeTimer = setInterval(tick, 1000);
+  tick(); // 初回反映
+}
 
   // ビルド番号 → 開発者モード（7回）
   const buildRow = document.getElementById("buildRow");

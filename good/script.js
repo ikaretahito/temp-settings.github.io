@@ -409,3 +409,99 @@ document.addEventListener("keydown", (e) => {
 });
 const debounce = (fn, d=160) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), d); }; };
 if (s) s.addEventListener("input", debounce(renderAppList, 160));
+// ---- 追加アプリ（コピペでOK）------------------------------------------
+(function addMoreApps(){
+  const add = (...xs) => Apps.all().push(...xs);
+
+  add(
+    // ユーザー向け定番
+    { id:"maps", name:"地図", system:false,
+      permissions:{ camera:false, mic:false, location:true, notifications:true },
+      screentime:{ todayMin:12, weekMin:90 } },
+
+    { id:"browser", name:"ブラウザ", system:false,
+      permissions:{ camera:true, mic:true, location:true, notifications:true },
+      screentime:{ todayMin:25, weekMin:210 } },
+
+    { id:"photos", name:"フォト", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:true },
+      screentime:{ todayMin:8, weekMin:55 } },
+
+    { id:"mail", name:"メール", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:true },
+      screentime:{ todayMin:5, weekMin:48 } },
+
+    { id:"music", name:"ミュージック", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:true },
+      screentime:{ todayMin:18, weekMin:160 } },
+
+    { id:"clock", name:"時計", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:true },
+      screentime:{ todayMin:1, weekMin:12 } },
+
+    { id:"calendar", name:"カレンダー", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:true },
+      screentime:{ todayMin:2, weekMin:30 } },
+
+    { id:"files", name:"ファイル", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      screentime:{ todayMin:3, weekMin:26 } },
+
+    { id:"notes", name:"メモ", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:true },
+      screentime:{ todayMin:4, weekMin:40 } },
+
+    { id:"weather", name:"天気", system:false,
+      permissions:{ camera:false, mic:false, location:true, notifications:true },
+      screentime:{ todayMin:2, weekMin:20 } },
+
+    { id:"recorder", name:"レコーダー", system:false,
+      permissions:{ camera:false, mic:true, location:false, notifications:false },
+      screentime:{ todayMin:1, weekMin:10 } },
+
+    { id:"calc", name:"電卓", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      screentime:{ todayMin:1, weekMin:7 } },
+
+    // コミュニケーション＆娯楽（仮名）
+    { id:"sns", name:"Chatter（SNS）", system:false,
+      permissions:{ camera:true, mic:true, location:true, notifications:true },
+      screentime:{ todayMin:22, weekMin:180 } },
+
+    { id:"game", name:"ブロックラン（ゲーム）", system:false,
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      screentime:{ todayMin:14, weekMin:120 } },
+
+    // システム（表示オプションでのみ見せる）
+    { id:"phone", name:"電話", system:true,
+      permissions:{ camera:false, mic:true, location:false, notifications:true },
+      screentime:{ todayMin:3, weekMin:24 } },
+
+    { id:"sms", name:"メッセージ", system:true,
+      permissions:{ camera:false, mic:false, location:false, notifications:true },
+      screentime:{ todayMin:2, weekMin:18 } },
+
+    { id:"contacts", name:"連絡先", system:true,
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      screentime:{ todayMin:1, weekMin:9 } },
+
+    { id:"ime", name:"日本語入力（IME）", system:true,
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      screentime:{ todayMin:1, weekMin:5 } },
+
+    { id:"systemui", name:"システムUI", system:true,
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      screentime:{ todayMin:0, weekMin:0 } },
+
+    { id:"download", name:"ダウンロードマネージャー", system:true,
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      screentime:{ todayMin:0, weekMin:3 } },
+
+    { id:"carrier", name:"キャリアサービス", system:true,
+      permissions:{ camera:false, mic:false, location:false, notifications:false },
+      screentime:{ todayMin:0, weekMin:2 } }
+  );
+
+  // 画面を再描画（まだ初期化前でも安全）
+  if (typeof renderAppList === "function") renderAppList();
+})();

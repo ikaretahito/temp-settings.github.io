@@ -104,7 +104,7 @@ function bindStorage(){
       chart.src = "storage usageGB.png";
       chart.alt = "ストレージ円グラフ（GB）";
     }else{
-      chart.src = "storage usagePct.png";
+      chart.src = "storage usageもどき.png";
       chart.alt = "ストレージ円グラフ（%）";
     }
     segBtns.forEach(b => {

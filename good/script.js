@@ -5,7 +5,11 @@ const Store = (() => {
     airplane:false, wifi:true, saver:false, bt:true, nearby:false,
     nfc:false, nfc_unlock:false, cap:false, tether:false, notifyData:true,
     autoBrightness:true, darkmode:false, unit:"gb", capValue:20, apn:"carrier.example.jp",
-    locAllowed:true, brightness:60, autolock:"1m"
+    locAllowed:true, brightness:60, autolock:"1m"lang: "ja",
+ime: "jp",
+tz: "Asia/Tokyo",
+autoTime: true
+
   };
   let state = { ...def, ...JSON.parse(localStorage.getItem(KEY) || "{}") };
   const save = () => localStorage.setItem(KEY, JSON.stringify(state));
@@ -362,7 +366,7 @@ if (typeof renderAppList === "function") renderAppList();
 /* ========= 初期化 ========= */
 document.addEventListener("DOMContentLoaded", () => {
   bindMenu(); bindSearch(); bindToggles(); bindDisplay(); bindStorage();
-  bindMobile(); bindAppsPage();
+  bindMobile(); bindAppsPage();bindSystem();
   window.addEventListener("popstate", routeFromHash);
 
   // Escで一覧に戻る（詳細表示時のみ）
@@ -373,3 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   routeFromHash();
 });
+lang: "ja",
+ime: "jp",
+tz: "Asia/Tokyo",
+autoTime: true

@@ -183,3 +183,4 @@ section[data-page="display"] input[type="range"]{
 .modal[hidden] {
   display: none !important;
 }
+.modal[hidden]{ display:none !important; }

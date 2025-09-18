@@ -3,4 +3,4 @@ hi.
 このサイトは僕がとある実験で作ったサイトです。
 コードは100％AIが書きました。僕はアイデアを上げただけ。
 ## 以上、実質盗作。
-[僕のGithub](https://ikaretahito.io/temp-settings.github.io/good)
+[僕のGithub](https://ikaretahito.github.io/temp-settings.github.io/good)
